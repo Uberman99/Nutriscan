@@ -25,11 +25,27 @@ export async function POST(request: NextRequest) {
     const imageBuffer = Buffer.from(image, 'base64');
 
     // Perform multiple types of analysis for better food recognition
-    const [labelResult, textResult, objectResult] = await Promise.all([
-      client.labelDetection({ image: { content: imageBuffer } }),
-      client.textDetection({ image: { content: imageBuffer } }),
-      client.objectLocalization({ image: { content: imageBuffer } })
-    ]);
+    const requests = [];
+
+    if (client.labelDetection) {
+      requests.push(client.labelDetection({ image: { content: imageBuffer } }));
+    } else {
+      requests.push(Promise.resolve([{ labelAnnotations: [] }]));
+    }
+
+    if (client.textDetection) {
+      requests.push(client.textDetection({ image: { content: imageBuffer } }));
+    } else {
+      requests.push(Promise.resolve([{ textAnnotations: [] }]));
+    }
+
+    if (client.objectLocalization) {
+      requests.push(client.objectLocalization({ image: { content: imageBuffer } }));
+    } else {
+      requests.push(Promise.resolve([{ localizedObjectAnnotations: [] }]));
+    }
+
+    const [labelResult, textResult, objectResult] = await Promise.all(requests);
 
     const labels = labelResult[0].labelAnnotations || [];
     const textAnnotations = textResult[0].textAnnotations || [];
