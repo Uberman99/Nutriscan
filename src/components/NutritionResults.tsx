@@ -226,7 +226,7 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
     );
   };
 
-  const renderContent = (content: any): string => {
+  const renderContent = (content: unknown): string => {
     if (!content) return '';
 
     // Handle string content
@@ -235,7 +235,7 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
       try {
         const parsed = JSON.parse(content);
         return renderContent(parsed); // Recursively handle parsed content
-      } catch (error) {
+      } catch {
         // It's a plain string, return it
         return content.trim();
       }

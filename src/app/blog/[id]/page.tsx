@@ -6,20 +6,21 @@ import { Button } from '@/components/ui/button'
 import { getBlogPost } from '@/lib/blog-data'
 
 interface BlogPostPageProps {
-  params: {
+  params: Promise<{
     id: string
-  }
+  }>
 }
 
-export default function BlogPostPage({ params }: BlogPostPageProps) {
-  const post = getBlogPost(params.id)
+export default async function BlogPostPage({ params }: BlogPostPageProps) {
+  const { id } = await params
+  const post = getBlogPost(id)
   
   if (!post) {
     return (
       <div className="min-h-screen py-8">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Post Not Found</h1>
-          <p className="text-gray-600 mb-8">The blog post you're looking for doesn't exist.</p>
+          <p className="text-gray-600 mb-8">The blog post you&apos;re looking for doesn&apos;t exist.</p>
           <Link href="/blog">
             <Button>
               <ArrowLeft className="mr-2 h-4 w-4" />

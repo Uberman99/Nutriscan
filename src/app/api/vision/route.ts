@@ -10,8 +10,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
+    const client = visionClient;
+
     // If no Vision client is available, use mock data
-    if (!visionClient) {
+    if (!client) {
       console.log('Using mock data for Vision API');
       return NextResponse.json({ 
         labels: mockFoodRecognition,
@@ -24,9 +26,9 @@ export async function POST(request: NextRequest) {
 
     // Perform multiple types of analysis for better food recognition
     const [labelResult, textResult, objectResult] = await Promise.all([
-      visionClient.labelDetection({ image: { content: imageBuffer } }),
-      visionClient.textDetection({ image: { content: imageBuffer } }),
-      visionClient.objectLocalization({ image: { content: imageBuffer } })
+      client.labelDetection({ image: { content: imageBuffer } }),
+      client.textDetection({ image: { content: imageBuffer } }),
+      client.objectLocalization({ image: { content: imageBuffer } })
     ]);
 
     const labels = labelResult[0].labelAnnotations || [];

@@ -129,7 +129,8 @@ export default function FoodScanner() {
           return null;
         }
       });
-      const priceData = (await Promise.all(pricePromises)).filter(Boolean).flat();
+      const priceDataResults = await Promise.all(pricePromises);
+      const priceData = priceDataResults.filter((data): data is PriceData[] => data !== null).flat();
 
       const filteredNutritionData = nutritionData.filter((data) => data !== null);
 
