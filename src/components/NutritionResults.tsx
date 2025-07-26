@@ -66,7 +66,7 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
         <span className="absolute inset-0 flex items-center justify-center text-xl font-bold text-gray-800">{score}</span>
       </div>
     );
-  };
+  } 
 
   // Beautiful card layout with glassmorphism
   return (
@@ -368,11 +368,3 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
   };
 
   // ...existing code...
-  return (
-    <div className="space-y-8">
-      {/* Quick Meal Logger - Top Priority */}
-      {/* ...existing code for the UI, unchanged... */}
-      <ToastContainer />
-    </div>
-  );
-}
