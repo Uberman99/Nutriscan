@@ -366,5 +366,3 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
     const stringified = String(content).trim();
     return stringified === '[object Object]' ? '' : stringified;
   };
-
-}
