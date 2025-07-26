@@ -1,3 +1,5 @@
+// Force Node.js runtime to avoid Edge Runtime incompatibility
+export const runtime = "nodejs";
 
 import { NextResponse } from 'next/server';
 import Tesseract from 'tesseract.js';
