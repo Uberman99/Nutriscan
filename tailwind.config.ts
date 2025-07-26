@@ -1,4 +1,6 @@
 import type { Config } from "tailwindcss";
+import typography from "@tailwindcss/typography";
+import forms from "@tailwindcss/forms";
 
 const config: Config = {
   content: [
@@ -8,13 +10,34 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundImage: {
-        "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
-        "gradient-conic":
-          "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
+      colors: {
+        primary: "#4CAF50",
+        secondary: "#FF9800",
+        accent: "#03A9F4",
+        background: "#F5F5F5",
+        foreground: "#212121",
+      },
+      spacing: {
+        18: "4.5rem",
+        22: "5.5rem",
+      },
+      typography: {
+        DEFAULT: {
+          css: {
+            color: "#212121",
+            a: {
+              color: "#03A9F4",
+              textDecoration: "none",
+              "&:hover": {
+                textDecoration: "underline",
+              },
+            },
+          },
+        },
       },
     },
   },
-  plugins: [],
+  plugins: [typography, forms],
 };
+
 export default config;
