@@ -2,6 +2,7 @@
 const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react'],
+    optimizeCss: false, // Disable lightningcss
   },
   images: {
     remotePatterns: [
