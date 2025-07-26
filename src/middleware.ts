@@ -1,7 +1,2 @@
-import { clerkMiddleware } from '@clerk/nextjs/server';
-
-export default clerkMiddleware();
-
-export const config = {
-  matcher: ['/((?!.*\\..*|_next).*)', '/', '/(api|trpc)(.*)'],
-};
+// No authentication middleware needed
+// Remove Clerk middleware to prevent 500 errors
