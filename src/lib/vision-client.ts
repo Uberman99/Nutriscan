@@ -6,20 +6,25 @@
  * UPDATE: Temporarily simplified for debugging Vercel build issues.
  */
 
-import { protos } from '@google-cloud/vision';
-
-// Define a type for the request
-type VisionRequest = protos.google.cloud.vision.v1.IAnnotateImageRequest;
+// Define a placeholder type for VisionRequest
+interface VisionRequest {
+  image: {
+    content: Buffer;
+  };
+}
 
 // Return dummy functions to avoid build errors
-const safeLabelDetection = (request: VisionRequest): Promise<[protos.google.cloud.vision.v1.IAnnotateImageResponse]> => {
-  return Promise.resolve([{ labelAnnotations: [] }]);
+const safeLabelDetection = (request: VisionRequest): Promise<{ labelAnnotations: unknown[] }> => {
+  console.log('Label detection request:', request); // Log the request for debugging
+  return Promise.resolve({ labelAnnotations: [] });
 };
-const safeTextDetection = (request: VisionRequest): Promise<[protos.google.cloud.vision.v1.IAnnotateImageResponse]> => {
-  return Promise.resolve([{ textAnnotations: [] }]);
+const safeTextDetection = (request: VisionRequest): Promise<{ textAnnotations: unknown[] }> => {
+  console.log('Text detection request:', request); // Log the request for debugging
+  return Promise.resolve({ textAnnotations: [] });
 };
-const safeObjectLocalization = (request: VisionRequest): Promise<[protos.google.cloud.vision.v1.IAnnotateImageResponse]> => {
-  return Promise.resolve([{ localizedObjectAnnotations: [] }]);
+const safeObjectLocalization = (request: VisionRequest): Promise<{ localizedObjectAnnotations: unknown[] }> => {
+  console.log('Object localization request:', request); // Log the request for debugging
+  return Promise.resolve({ localizedObjectAnnotations: [] });
 };
 
 export const vision = {
