@@ -367,4 +367,4 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
     return stringified === '[object Object]' ? '' : stringified;
   };
 
-  // ...existing code...
+}
