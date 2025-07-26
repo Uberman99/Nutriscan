@@ -251,22 +251,23 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
 
     // Handle object content
     if (typeof content === 'object' && content !== null) {
+      const obj = content as Record<string, unknown>;
       // Look for common text properties
-      if (content.description && typeof content.description === 'string') {
-        return content.description.trim();
+      if (obj.description && typeof obj.description === 'string') {
+        return obj.description.trim();
       }
-      if (content.suggestion && typeof content.suggestion === 'string') {
-        return content.suggestion.trim();
+      if (obj.suggestion && typeof obj.suggestion === 'string') {
+        return obj.suggestion.trim();
       }
-      if (content.recommendation && typeof content.recommendation === 'string') {
-        return content.recommendation.trim();
+      if (obj.recommendation && typeof obj.recommendation === 'string') {
+        return obj.recommendation.trim();
       }
-      if (content.text && typeof content.text === 'string') {
-        return content.text.trim();
+      if (obj.text && typeof obj.text === 'string') {
+        return obj.text.trim();
       }
       
       // If it's a simple object with a single string value, return that
-      const values = Object.values(content).filter(val => typeof val === 'string' && val.trim());
+      const values = Object.values(obj).filter(val => typeof val === 'string' && val.trim());
       if (values.length === 1) {
         return values[0] as string;
       }
