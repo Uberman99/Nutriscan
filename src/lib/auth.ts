@@ -1,17 +1,20 @@
-// src/lib/auth.ts
-import { NextAuthOptions } from 'next-auth';
+import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
-import { VercelPostgresAdapter } from "@auth/vercel-postgres"
-import { db } from './db';
+import PgAdapter from "@auth/pg-adapter";
+import { Pool } from 'pg';
+import type { NextAuthConfig } from 'next-auth';
 
-export const authOptions: NextAuthOptions = {
-  adapter: VercelPostgresAdapter(db.query),
+const pool = new Pool({
+  connectionString: process.env.POSTGRES_URL,
+});
+
+export const config = {
+  adapter: PgAdapter(pool),
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    // Add other providers like GitHub, Apple, etc. if needed
   ],
   session: {
     strategy: 'jwt',
@@ -19,7 +22,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.sub!;
+        (session.user as { id?: string }).id = token.sub!;
       }
       return session;
     },
@@ -32,8 +35,7 @@ export const authOptions: NextAuthOptions = {
   },
   pages: {
     signIn: '/login', // A custom login page
-    // error: '/auth/error', // Error code passed in query string as ?error=
-    // verifyRequest: '/auth/verify-request', // (e.g. check your email)
-    // newUser: '/auth/new-user' // New users will be directed here on first sign in
   },
-};
+} satisfies NextAuthConfig;
+
+export const { handlers, auth, signIn, signOut } = NextAuth(config);

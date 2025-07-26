@@ -58,8 +58,9 @@ export async function POST(request: NextRequest) {
         const parsedResponse = JSON.parse(jsonMatch[0]);
         return NextResponse.json(parsedResponse);
       }
-    } catch (_error) {
+    } catch (error) {
       // If JSON parsing fails, create a structured response
+      console.log('JSON parsing failed:', error);
       const lines = text.split('\n').filter(line => line.trim());
       return NextResponse.json({
         description: lines[0] || 'Food analysis completed',

@@ -70,7 +70,6 @@ export async function POST(request: NextRequest) {
     }
 
     // Combine and rank results
-    const allFoods = recognitionResults.flat();
     const foodCounts: { [food: string]: { count: number, avgConfidence: number } } = {};
     
     recognitionResults.forEach((foods, index) => {

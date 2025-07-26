@@ -1,9 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Camera, Search, DollarSign, Brain, Star, Users } from "lucide-react";
+import { Camera, Search, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { foodShowcaseData } from "@/lib/food-data";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Home() {
   return (
@@ -116,7 +116,7 @@ export default function Home() {
                 **99.7% Meal Detection Accuracy**
               </h2>
               <p className="text-xl text-white/90 max-w-3xl mx-auto leading-relaxed">
-                Our revolutionary AI doesn't just recognize foods - it achieves extreme precision in complete meal analysis with industry-leading accuracy rates.
+                Our revolutionary AI doesn&apos;t just recognize foods - it achieves extreme precision in complete meal analysis with industry-leading accuracy rates.
               </p>
             </div>
           </div>

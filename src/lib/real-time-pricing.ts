@@ -1,4 +1,3 @@
-```typescript
 // src/lib/real-time-pricing.ts
 
 interface StorePrice {
@@ -89,4 +88,3 @@ export function getRealTimePrices(foodName: string): StorePrice[] {
 
   return prices.sort((a, b) => a.price - b.price);
 }
-```

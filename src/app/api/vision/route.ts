@@ -2,6 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { vision } from '@/lib/vision-client';
 import { mockFoodRecognition } from '@/lib/demo-data';
 
+// Use Google Cloud Vision types
+type LabelAnnotation = import('@google-cloud/vision').protos.google.cloud.vision.v1.IEntityAnnotation;
+type TextAnnotation = import('@google-cloud/vision').protos.google.cloud.vision.v1.IEntityAnnotation;
+type LocalizedObjectAnnotation = import('@google-cloud/vision').protos.google.cloud.vision.v1.ILocalizedObjectAnnotation;
+
+interface DetectedItem {
+  name: string;
+  score: number;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { image } = await request.json();
@@ -35,7 +45,7 @@ export async function POST(request: NextRequest) {
     const objects = objectResult[0].localizedObjectAnnotations || [];
     
     // Extract text for restaurant/brand recognition
-    const detectedText = textAnnotations.map((annotation: any) => annotation.description || '').join(' ').toLowerCase();
+    const detectedText = textAnnotations.map((annotation: TextAnnotation) => annotation.description || '').join(' ').toLowerCase();
     
     // Restaurant/brand specific food mapping
     const restaurantFoodMap: { [key: string]: string[] } = {
@@ -75,7 +85,7 @@ export async function POST(request: NextRequest) {
     
     // Enhanced label filtering with better food detection
     const foodLabels = labels
-      .filter((label: any) => {
+      .filter((label: LabelAnnotation) => {
         if (!label.score || label.score < 0.3) return false; // Even lower threshold
         const description = label.description?.toLowerCase() || '';
         
@@ -93,7 +103,7 @@ export async function POST(request: NextRequest) {
         return foodKeywords.some(keyword => description.includes(keyword)) ||
                description.match(/\b(eating|cooking|cuisine|dish|meal|snack|treat|mexican|asian|indian)\b/);
       })
-      .map((label: any) => {
+      .map((label: LabelAnnotation) => {
         const desc = label.description || '';
         const lowerDesc = desc.toLowerCase();
         
@@ -114,8 +124,8 @@ export async function POST(request: NextRequest) {
 
     // Enhanced object detection for food items
     const foodObjects = objects
-      .filter((obj: any) => obj.score && obj.score > 0.4)
-      .map((obj: any) => obj.name || '')
+      .filter((obj: LocalizedObjectAnnotation) => obj.score && obj.score > 0.4)
+      .map((obj: LocalizedObjectAnnotation) => obj.name || '')
       .slice(0, 5);
 
     // Smart food identification based on context
@@ -164,8 +174,8 @@ export async function POST(request: NextRequest) {
 
     // Combine all detected items
     const allItems = [
-      ...labels.map((label: any) => ({ name: label.description, score: label.score })),
-      ...objects.map((obj: any) => ({ name: obj.name, score: obj.score })),
+      ...labels.map((label: LabelAnnotation) => ({ name: label.description || '', score: label.score || 0 })),
+      ...objects.map((obj: LocalizedObjectAnnotation) => ({ name: obj.name || '', score: obj.score || 0 })),
       ...brandSpecificFoods.map(food => ({ name: food, score: 0.95 })) // High confidence for text match
     ];
 
