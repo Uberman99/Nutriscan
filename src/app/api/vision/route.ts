@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { visionClient } from '@/lib/vision-client';
+import { vision } from '@/lib/vision-client';
 import { mockFoodRecognition } from '@/lib/demo-data';
 
 export async function POST(request: NextRequest) {
@@ -10,10 +10,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No image provided' }, { status: 400 });
     }
 
-    const client = visionClient;
-
     // If no Vision client is available, use mock data
-    if (!client) {
+    if (!vision.client) {
       console.log('Using mock data for Vision API');
       return NextResponse.json({ 
         labels: mockFoodRecognition,
@@ -23,29 +21,14 @@ export async function POST(request: NextRequest) {
 
     // Convert base64 to buffer
     const imageBuffer = Buffer.from(image, 'base64');
+    const visionRequest = { image: { content: imageBuffer } };
 
     // Perform multiple types of analysis for better food recognition
-    const requests = [];
-
-    if (client.labelDetection) {
-      requests.push(client.labelDetection({ image: { content: imageBuffer } }));
-    } else {
-      requests.push(Promise.resolve([{ labelAnnotations: [] }]));
-    }
-
-    if (client.textDetection) {
-      requests.push(client.textDetection({ image: { content: imageBuffer } }));
-    } else {
-      requests.push(Promise.resolve([{ textAnnotations: [] }]));
-    }
-
-    if (client.objectLocalization) {
-      requests.push(client.objectLocalization({ image: { content: imageBuffer } }));
-    } else {
-      requests.push(Promise.resolve([{ localizedObjectAnnotations: [] }]));
-    }
-
-    const [labelResult, textResult, objectResult] = await Promise.all(requests);
+    const [labelResult, textResult, objectResult] = await Promise.all([
+      vision.labelDetection(visionRequest),
+      vision.textDetection(visionRequest),
+      vision.objectLocalization(visionRequest)
+    ]);
 
     const labels = labelResult[0].labelAnnotations || [];
     const textAnnotations = textResult[0].textAnnotations || [];
