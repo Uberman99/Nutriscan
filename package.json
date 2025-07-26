@@ -10,8 +10,7 @@
     "clean": "rm -rf .next node_modules/.cache",
     "build:clean": "npm run clean && npm run build",
     "verify-api-keys": "node scripts/verify-api-keys.js",
-    "dev:with-api-check": "npm run verify-api-keys && npm run dev",
-    "postinstall": "npx lightningcss --install"
+    "dev:with-api-check": "npm run verify-api-keys && npm run dev"
   },
   "dependencies": {
     "@auth/pg-adapter": "^1.10.0",
