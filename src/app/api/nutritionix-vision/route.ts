@@ -29,21 +29,12 @@ export async function POST(request: NextRequest) {
     const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
     console.log('🖼️ Image buffer size:', imageBuffer.length, 'bytes');
 
-    // Nutritionix v2 Natural Language API with image (correct current API)
+
+    // Get the query value from the client form data
+    const query = formData.get('query') as string | null;
     const nutritionixFormData = new FormData();
     nutritionixFormData.append('photo', imageFile);
-    // The API requires a query string in the form data.
-    nutritionixFormData.append('query', 'a food item');
-
-    // Dynamically set the query parameter based on detected food items
-    const detectedFoodItem = 'example food'; // Replace with actual detected food item
-    console.log('🔍 Detected food items:', detectedFoodItem);
-    if (!detectedFoodItem || detectedFoodItem.trim() === '') {
-      console.error('❌ Detected food item is empty or invalid. Using fallback query parameter.');
-      nutritionixFormData.set('query', 'generic food');
-    } else {
-      nutritionixFormData.set('query', detectedFoodItem);
-    }
+    nutritionixFormData.append('query', query && query.trim() !== '' ? query : 'generic food');
     console.log('📋 Final Nutritionix Form Data:', Array.from(nutritionixFormData.entries()));
 
     console.log('📡 Sending request to Nutritionix v2 API...');

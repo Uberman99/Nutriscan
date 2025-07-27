@@ -3,10 +3,11 @@ import { NutritionInfo } from './types';
 
 // Type definitions
 
+
 interface FoodRecognitionResult {
   name: string;
   confidence: number;
-  source: 'Clarifai' | 'Nutritionix' | 'Google Vision' | 'Fallback' | 'Gemini';
+  source: 'Clarifai' | 'Nutritionix' | 'Fallback' | 'GPT' | 'Tesseract';
 }
 
 type ApiResultItem = {
@@ -18,7 +19,8 @@ type ApiResultItem = {
   value?: number;
 };
 
-type ApiSource = 'Clarifai' | 'Nutritionix' | 'Google Vision' | 'Gemini';
+
+type ApiSource = 'Clarifai' | 'Nutritionix' | 'GPT' | 'Tesseract' | 'Fallback';
 type ApiPromiseResult = { source: ApiSource; results: ApiResultItem[] };
 
 // NEW: Unified food recognition function with a waterfall strategy for extreme accuracy
@@ -28,246 +30,167 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
   const base64Image = await fileToBase64(imageFile);
   console.log('📷 Image converted to base64, length:', base64Image.length);
 
-  const apiPromises: Promise<ApiPromiseResult>[] = [];
 
-  // 1. Clarifai API Call
-  if (process.env.NEXT_PUBLIC_CLARIFAI_API_KEY) {
-    const clarifaiPromise: Promise<ApiPromiseResult> = (async () => {
-      try {
-        console.log('1️⃣ Preparing Clarifai API call...');
-        const formData = new FormData();
-        formData.append('image', imageFile);
-        const response = await fetch('/api/clarifai-vision', { method: 'POST', body: formData });
-        if (!response.ok) {
-          console.error('❌ Clarifai API failed:', response.status, await response.text());
-          return { source: 'Clarifai', results: [] };
-        }
-        const data = await response.json();
-        console.log('✅ Clarifai API Response:', JSON.stringify(data, null, 2));
-        return { source: 'Clarifai', results: data.foods || [] };
-      } catch (error) {
-        console.warn('🚨 Clarifai API error:', error);
-        return { source: 'Clarifai', results: [] };
-      }
-    })();
-    apiPromises.push(clarifaiPromise);
-  }
 
-  // 2. Nutritionix API Call
-  const nutritionixPromise: Promise<ApiPromiseResult> = (async () => {
+  // 1. Clarifai API (replace Google Vision)
+  const clarifaiPromise: Promise<ApiPromiseResult> = (async () => {
     try {
-      console.log('2️⃣ Preparing Nutritionix API call...');
-
-      if (!imageFile || !(imageFile instanceof Blob)) {
-        console.error('🚨 Invalid image file provided for Nutritionix API');
-        return { source: 'Nutritionix', results: [], error: 'Invalid image file' };
-      }
-
-      // Check if the image contains non-food items
-      const foodName = imageFile.name.toLowerCase();
-      if (NON_FOOD_ITEMS.has(foodName)) {
-        console.error(`❌ Non-food item detected: "${foodName}"`);
-        return { source: 'Nutritionix', results: [], error: 'Non-food item detected' };
-      }
-
-      // Compress the image using a canvas
-      const compressImage = async (file: Blob): Promise<Blob> => {
-        const imageBitmap = await createImageBitmap(file);
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-
-        // Set desired dimensions (e.g., max 800x800)
-        const MAX_WIDTH = 800;
-        const MAX_HEIGHT = 800;
-        let width = imageBitmap.width;
-        let height = imageBitmap.height;
-
-        if (width > MAX_WIDTH || height > MAX_HEIGHT) {
-          const aspectRatio = width / height;
-          if (width > height) {
-            width = MAX_WIDTH;
-            height = MAX_WIDTH / aspectRatio;
-          } else {
-            height = MAX_HEIGHT;
-            width = MAX_HEIGHT * aspectRatio;
-          }
-        }
-
-        canvas.width = width;
-        canvas.height = height;
-        ctx?.drawImage(imageBitmap, 0, 0, width, height);
-
-        // Convert to Blob with quality compression
-        return new Promise((resolve) => {
-          canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', 0.8); // 80% quality
-        });
-      };
-
-      const compressedImage = await compressImage(imageFile);
-
-      const formData = new FormData();
-      formData.append('image', compressedImage);
-
-      const response = await fetch('/api/nutritionix-vision', { method: 'POST', body: formData });
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.warn('Nutritionix API encountered an issue:', response.status, errorText);
-        // Add additional error handling logic here if needed.
-        return { source: 'Nutritionix', results: [], error: errorText, status: response.status };
-      }
-
-      const data = await response.json();
-      console.log('✅ Nutritionix API Response:', JSON.stringify(data, null, 2));
-      return { source: 'Nutritionix', results: data.foods || [] };
-    } catch (error) {
-      console.error('🚨 Nutritionix API error:', error);
-      return { source: 'Nutritionix', results: [], error: (error as Error).message };
-    }
-  })();
-  apiPromises.push(nutritionixPromise);
-
-  // 3. Google Vision API Call
-  const googleVisionPromise: Promise<ApiPromiseResult> = (async () => {
-    try {
-      console.log('3️⃣ Preparing Google Vision API call...');
-      const response = await fetch('/api/vision', {
+      const response = await fetch('/api/clarifai', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64Image }),
       });
-      if (!response.ok) {
-        console.error('❌ Google Vision API failed:', response.status, await response.text());
-        return { source: 'Google Vision', results: [] };
-      }
+      if (!response.ok) return { source: 'Clarifai', results: [] };
       const data = await response.json();
-      console.log('✅ Google Vision API Response:', JSON.stringify(data, null, 2));
-      return { source: 'Google Vision', results: data.labels || [] };
-    } catch (error) {
-      console.warn('🚨 Google Vision error:', error);
-      return { source: 'Google Vision', results: [] };
+      // Assume API returns { labels: string[] } or similar
+      return { source: 'Clarifai', results: data.labels?.map((label: string) => ({ name: label, confidence: 0.7 })) || [] };
+    } catch {
+      return { source: 'Clarifai', results: [] };
     }
   })();
-  apiPromises.push(googleVisionPromise);
 
-  // Execute all API calls in parallel
-  const allApiResults = await Promise.all(apiPromises);
-
-  // Consolidate and rank results
-  let rankedResults = consolidateAndRankResults(allApiResults);
-
-  // 4. FINAL STEP: Expert consolidation with Gemini Vision
-  if (rankedResults.length > 0) {
-    console.log('🔬 Performing final expert analysis with Gemini Vision...');
+  // 2. Tesseract OCR (browser-side, free)
+  const tesseractPromise: Promise<ApiPromiseResult> = (async () => {
     try {
-      const topCandidates = rankedResults.slice(0, 5).map(r => r.name);
-      const formData = new FormData();
-      formData.append('image', imageFile);
-      formData.append('labels', JSON.stringify(topCandidates));
-
-      const geminiResponse = await fetch('/api/gemini-vision', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (geminiResponse.ok) {
-        const geminiData = await geminiResponse.json();
-        if (geminiData.foodName) {
-          console.log('✨ Gemini expert result:', geminiData.foodName);
-          const geminiResult: FoodRecognitionResult = {
-            name: geminiData.foodName,
-            confidence: 0.99, // Highest confidence
-            source: 'Gemini', // New source
-          };
-          // Place the Gemini result at the very top
-          rankedResults = [geminiResult, ...rankedResults.filter(r => r.name !== geminiData.foodName)];
-        }
-      } else {
-        console.warn('⚠️ Gemini Vision expert analysis failed:', await geminiResponse.text());
-      }
-    } catch (error) {
-      console.error('🚨 Error during Gemini Vision expert analysis:', error);
+      // Dynamically import tesseract.js (must be installed in your project)
+      const { default: TesseractModule } = await import('tesseract.js');
+      const imageBitmap = await createImageBitmap(imageFile);
+      const canvas = document.createElement('canvas');
+      canvas.width = imageBitmap.width;
+      canvas.height = imageBitmap.height;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(imageBitmap, 0, 0);
+      const dataUrl = canvas.toDataURL('image/png');
+      const result = await TesseractModule.recognize(dataUrl, 'eng');
+      const text = result.data.text || '';
+      // Use a simple regex to extract food-like words (improve as needed)
+      const foodWords = text.match(/[A-Za-z][A-Za-z\s]{2,}/g) || [];
+      return { source: 'Tesseract', results: foodWords.map(word => ({ name: word.trim(), confidence: 0.5 })) };
+    } catch {
+      return { source: 'Tesseract', results: [] };
     }
+  })();
+
+  // 3. GPT (OpenAI or free alternative, e.g., Hugging Face Inference API with free models)
+  const gptPromise: Promise<ApiPromiseResult> = (async () => {
+    try {
+      // Use Clarifai and Tesseract results as input
+      const [clarifai, tesseract] = await Promise.all([clarifaiPromise, tesseractPromise]);
+      const candidates = [
+        ...clarifai.results.map(r => r.name || ''),
+        ...tesseract.results.map(r => r.name || '')
+      ].filter(Boolean).slice(0, 10);
+      if (candidates.length === 0) return { source: 'GPT', results: [] };
+      const response = await fetch('/api/gpt-food-names', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ candidates }),
+      });
+      if (!response.ok) return { source: 'GPT', results: [] };
+      const data = await response.json();
+      // Assume API returns { foodNames: string[] }
+      return { source: 'GPT', results: (data.foodNames || []).map((name: string) => ({ name, confidence: 0.9 })) };
+    } catch {
+      return { source: 'GPT', results: [] };
+    }
+  })();
+
+  // Wait for all detection APIs
+  const detectionResults = await Promise.all([clarifaiPromise, tesseractPromise, gptPromise]);
+  const detectedFoodNames = detectionResults.flatMap(r => r.results.map(item => item.name || item.food_name || '')).filter(Boolean);
+  const topFoodName = detectedFoodNames[0] || 'food';
+
+  // 4. Nutritionix API (send best detected food name)
+  const compressImage = async (file: Blob): Promise<Blob> => {
+    const imageBitmap = await createImageBitmap(file);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 800;
+    let width = imageBitmap.width;
+    let height = imageBitmap.height;
+    if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+      const aspectRatio = width / height;
+      if (width > height) {
+        width = MAX_WIDTH;
+        height = MAX_WIDTH / aspectRatio;
+      } else {
+        height = MAX_HEIGHT;
+        width = MAX_HEIGHT * aspectRatio;
+      }
+    }
+    canvas.width = width;
+    canvas.height = height;
+    ctx?.drawImage(imageBitmap, 0, 0, width, height);
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => resolve(blob || file), 'image/jpeg', 0.8);
+    });
+  };
+  const compressedImage = await compressImage(imageFile);
+  const nutritionixFormData = new FormData();
+  nutritionixFormData.append('image', compressedImage);
+  nutritionixFormData.append('query', topFoodName);
+  const nutritionixResponse = await fetch('/api/nutritionix-vision', { method: 'POST', body: nutritionixFormData });
+  let nutritionixResults: ApiResultItem[] = [];
+  if (nutritionixResponse.ok) {
+    const data = await nutritionixResponse.json();
+    nutritionixResults = data.foods || [];
   }
 
-  return rankedResults;
-}
+  // Merge all results
+  const allApiResults: ApiPromiseResult[] = [
+    ...detectionResults,
+    { source: 'Nutritionix', results: nutritionixResults }
+  ];
 
-const getBestSource = (sources: Set<ApiSource>): FoodRecognitionResult['source'] => {
-    if (sources.has('Gemini')) return 'Gemini';
-    if (sources.has('Clarifai')) return 'Clarifai';
-    if (sources.has('Nutritionix')) return 'Nutritionix';
-    if (sources.has('Google Vision')) return 'Google Vision';
-    return 'Fallback';
-};
-
-function consolidateAndRankResults(
-  apiResults: ApiPromiseResult[]
-): FoodRecognitionResult[] {
-  console.log('📊 Consolidating and ranking results from all APIs...');
+  // Consolidate and rank results
   const foodScores: { [key: string]: { score: number; sources: Set<ApiSource>; confidences: number[] } } = {};
-
   const apiWeights: { [key in ApiSource]: number } = {
-    'Clarifai': 1.0,       // Highest trust
-    'Nutritionix': 0.9,    // High trust, good for specific items
-    'Google Vision': 0.8,  // Good general purpose, but can be broad
-    'Gemini': 1.5, // Ultimate trust
+    'Clarifai': 1.0,
+    'Nutritionix': 0.9,
+    'GPT': 1.0,
+    'Tesseract': 0.7,
+    'Fallback': 0.5,
   };
-
-  // 1. Process and score results from each API
-  apiResults.forEach(({ source, results }) => {
+  allApiResults.forEach(({ source, results }) => {
     if (!results || results.length === 0) return;
-
     // Filter out non-food items first
     const filteredResults = results.filter(item => {
       const name = (item.name || item.food_name || item.description || '').trim().toLowerCase();
       return name && !NON_FOOD_ITEMS.has(name);
     });
-
     filteredResults.forEach((item, index) => {
       const name = (item.name || item.food_name || item.description || '').trim();
       const confidence = item.confidence || item.score || item.value || 0;
-      
-      // Normalize name to handle plurals and minor variations
       const normalizedName = name.toLowerCase().replace(/s$/, '');
-
       if (!foodScores[normalizedName]) {
         foodScores[normalizedName] = { score: 0, sources: new Set(), confidences: [] };
       }
-
-      // Scoring algorithm
-      const positionBonus = Math.max(0, 5 - index) * 0.1; // Bonus for being in top 5
+      const positionBonus = Math.max(0, 5 - index) * 0.1;
       const score = confidence * apiWeights[source] + positionBonus;
-
       foodScores[normalizedName].score += score;
       foodScores[normalizedName].sources.add(source);
       foodScores[normalizedName].confidences.push(confidence);
     });
   });
-
-  // 2. Apply special logic and finalize scores
   let consolidatedList = Object.entries(foodScores).map(([name, data]) => {
-    // Boost score if detected by multiple sources
     if (data.sources.size > 1) {
-      data.score *= (1 + (data.sources.size * 0.2)); // 20% boost for each additional source
+      data.score *= (1 + (data.sources.size * 0.2));
     }
     const avgConfidence = data.confidences.reduce((a, b) => a + b, 0) / data.confidences.length;
-    const bestSource = getBestSource(data.sources);
-
+      const bestSource = getBestSource(data.sources);
     return {
-      name: name.charAt(0).toUpperCase() + name.slice(1), // Capitalize
-      confidence: Math.min(avgConfidence, 1.0), // Average confidence, capped at 1.0
+      name: name.charAt(0).toUpperCase() + name.slice(1),
+      confidence: Math.min(avgConfidence, 1.0),
       score: data.score,
       source: bestSource,
     };
   });
-
   // Custom logic for "Fish Fillet"
   const hasFish = consolidatedList.some(r => r.name.toLowerCase().includes('fish'));
   const hasFillet = consolidatedList.some(r => r.name.toLowerCase().includes('fillet'));
   const hasSeaBass = consolidatedList.some(r => r.name.toLowerCase().includes('sea bass'));
-
   if (hasFish && (hasFillet || hasSeaBass)) {
-    console.log('🐟 Detected "Fish Fillet" based on keywords in consolidated results.');
     consolidatedList = consolidatedList.filter(r => 
       !r.name.toLowerCase().includes('fish') && 
       !r.name.toLowerCase().includes('fillet') &&
@@ -276,21 +199,23 @@ function consolidateAndRankResults(
     consolidatedList.push({ 
       name: 'Fish Fillet', 
       confidence: 0.98, 
-      score: 100, // High score to push it to the top
+      score: 100, 
       source: 'Fallback'
     });
   }
 
-  // 3. Sort by final score
+// Helper to pick the best source from a set
+function getBestSource(sources: Set<ApiSource>): ApiSource {
+  if (sources.has('Nutritionix')) return 'Nutritionix';
+  if (sources.has('GPT')) return 'GPT';
+  if (sources.has('Clarifai')) return 'Clarifai';
+  if (sources.has('Tesseract')) return 'Tesseract';
+  return 'Fallback';
+}
   consolidatedList.sort((a, b) => b.score - a.score);
-
-  console.log('🏆 Final ranked results:', consolidatedList);
-
   if (consolidatedList.length === 0) {
-    console.log('🚨 No food items identified after consolidation. Using fallback.');
     return [{ name: 'Food Item', confidence: 0.5, source: 'Fallback' }];
   }
-
   return consolidatedList.slice(0, 5).map(item => ({
     name: item.name,
     confidence: item.confidence,
@@ -299,24 +224,21 @@ function consolidateAndRankResults(
 }
 
 
-// Google Vision API for food recognition
+// Clarifai API for food recognition
 export async function analyzeImage(imageFile: File): Promise<string[]> {
   try {
     const base64Image = await fileToBase64(imageFile);
-    
-    const response = await fetch('/api/vision', {
+    const response = await fetch('/api/clarifai', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({ image: base64Image }),
     });
-
     if (!response.ok) {
-      console.warn('Vision API response not ok, using fallback');
+      console.warn('Clarifai API response not ok, using fallback');
       return ['Food Item', 'Meal', 'Snack'];
     }
-
     const data = await response.json();
     return data.labels || ['Food Item', 'Meal', 'Snack'];
   } catch (error) {
