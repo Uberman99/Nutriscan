@@ -1,4 +1,23 @@
+
 import { NextRequest, NextResponse } from 'next/server';
+
+// Type for Gemini API response
+type GeminiCandidate = {
+  content?: {
+    parts?: { text?: string }[];
+  };
+};
+
+
+type GeminiResponse = {
+  candidates?: GeminiCandidate[];
+};
+
+type GeminiParsed = {
+  description: string;
+  healthScore: number;
+  suggestions: string[];
+};
 
 
 export async function POST(request: NextRequest) {
@@ -56,14 +75,30 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
 
-    const result = await response.json();
+
+    const result: GeminiResponse = await response.json();
     // Gemini returns candidates[0].content.parts[0].text
     const text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    let parsed;
+    let parsed: GeminiParsed;
     try {
-      parsed = JSON.parse(text);
-    } catch {
-      console.error('Failed to parse Gemini response as JSON:', text);
+      parsed = JSON.parse(text) as GeminiParsed;
+    } catch (e) {
+      console.error('Failed to parse Gemini response as JSON:', text, e);
+      return NextResponse.json({
+        description: 'Food analysis failed',
+        healthScore: 50,
+        suggestions: ['Try again later', 'Ensure valid input', 'Check API status'],
+        geminiRaw: text
+      }, { status: 500 });
+    }
+    // Validate parsed object
+    if (
+      typeof parsed !== 'object' ||
+      typeof parsed.description !== 'string' ||
+      typeof parsed.healthScore !== 'number' ||
+      !Array.isArray(parsed.suggestions)
+    ) {
+      console.error('Gemini response missing expected fields:', parsed);
       return NextResponse.json({
         description: 'Food analysis failed',
         healthScore: 50,
@@ -72,9 +107,9 @@ export async function POST(request: NextRequest) {
       }, { status: 500 });
     }
     return NextResponse.json({
-      description: parsed.description || 'Food analysis completed',
-      healthScore: typeof parsed.healthScore === 'number' ? parsed.healthScore : 75,
-      suggestions: Array.isArray(parsed.suggestions) ? parsed.suggestions.slice(0, 3) : ['Add more vegetables', 'Watch portion sizes', 'Stay hydrated']
+      description: parsed.description,
+      healthScore: parsed.healthScore,
+      suggestions: parsed.suggestions.slice(0, 3)
     });
 
   } catch (error) {
@@ -83,6 +118,6 @@ export async function POST(request: NextRequest) {
       description: 'Food analysis failed',
       healthScore: 50,
       suggestions: ['Try again later', 'Ensure valid input', 'Check API status']
-    });
+    }, { status: 500 });
   }
 }

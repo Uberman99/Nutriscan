@@ -30,11 +30,15 @@ export async function POST(request: NextRequest) {
     console.log('🖼️ Image buffer size:', imageBuffer.length, 'bytes');
 
 
+
     // Get the query value from the client form data
     const query = formData.get('query') as string | null;
+    if (!query || query.trim() === '') {
+      return NextResponse.json({ error: 'No query provided. Please describe the food in the image.' }, { status: 400 });
+    }
     const nutritionixFormData = new FormData();
     nutritionixFormData.append('photo', imageFile);
-    nutritionixFormData.append('query', query && query.trim() !== '' ? query : 'generic food');
+    nutritionixFormData.append('query', query);
     console.log('📋 Final Nutritionix Form Data:', Array.from(nutritionixFormData.entries()));
 
     console.log('📡 Sending request to Nutritionix v2 API...');

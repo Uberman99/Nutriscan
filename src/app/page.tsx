@@ -14,8 +14,8 @@ export default function Home() {
           <Image
             src="https://images.unsplash.com/photo-1540189549336-e6e99c3679fe?q=80&w=1887&auto=format&fit=crop"
             alt="A vibrant display of fresh and healthy food"
-            layout="fill"
-            objectFit="cover"
+            fill
+            style={{ objectFit: 'cover' }}
             className="opacity-20"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent"></div>

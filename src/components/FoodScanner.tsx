@@ -245,8 +245,8 @@ export default function FoodScanner() {
                 <Image 
                   src={selectedImage} 
                   alt="Selected food" 
-                  fill 
-                  style={{ objectFit: 'contain' }} 
+                  fill
+                  style={{ objectFit: 'contain' }}
                   className="rounded-lg border-2 border-dashed border-gray-300" 
                 />
               </div>
