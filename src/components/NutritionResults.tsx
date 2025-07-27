@@ -351,13 +351,11 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
       if (obj.text && typeof obj.text === 'string') {
         return obj.text.trim();
       }
-      
       // If it's a simple object with a single string value, return that
       const values = Object.values(obj).filter(val => typeof val === 'string' && val.trim());
       if (values.length === 1) {
         return values[0] as string;
       }
-      
       // Skip empty objects or objects without meaningful text
       return '';
     }
@@ -365,4 +363,5 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
     // Handle other types
     const stringified = String(content).trim();
     return stringified === '[object Object]' ? '' : stringified;
-  };
+  }
+}
