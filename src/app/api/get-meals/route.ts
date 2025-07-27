@@ -21,9 +21,22 @@ export async function GET(request: NextRequest) {
     }
 
     console.log(`Fetching meals for date: ${date} user: ${effectiveUserId}`);
-    const meals = await getMealLogsByDate(effectiveUserId, date);
-    console.log(`Found meals: ${meals.length}`);
-    
+    let meals = [];
+    try {
+      meals = await getMealLogsByDate(effectiveUserId, date);
+      if (Array.isArray(meals)) {
+        console.log(`Found meals: ${meals.length}`);
+      } else {
+        console.warn('getMealLogsByDate did not return an array:', meals);
+      }
+    } catch (dbError) {
+      console.error('Database error in getMealLogsByDate:', dbError);
+      return NextResponse.json({
+        success: false,
+        error: 'Database error',
+        details: dbError instanceof Error ? dbError.message : dbError
+      }, { status: 500 });
+    }
     return NextResponse.json({ success: true, meals });
 
   } catch (error) {
