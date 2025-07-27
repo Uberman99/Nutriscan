@@ -30,8 +30,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
 
-    // Gemini API endpoint for text generation (corrected to v1)
-    const geminiEndpoint = 'https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=' + GEMINI_API_KEY;
+    // Gemini API endpoint for text generation (latest, recommended)
+    // If you have access to Gemini 1.5, use 'models/gemini-1.5-pro-latest' or check your available models.
+    const geminiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=' + GEMINI_API_KEY;
     const prompt = `Analyze the following food items: ${foodItems.join(', ')}.\n\nReturn ONLY a JSON object with the following fields: description (string), healthScore (number between 1-100), suggestions (array of 3 short strings with health tips). Example: {\n  \"description\": \"...\",\n  \"healthScore\": 85,\n  \"suggestions\": [\"tip1\", \"tip2\", \"tip3\"]\n}`;
 
     const geminiBody = {
