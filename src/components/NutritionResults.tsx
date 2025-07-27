@@ -218,5 +218,4 @@ const HealthImpactSection = ({ healthData }: { healthData: NutritionInfo['health
     </div>
   );
 };
-// ...existing code up to the end of the NutritionResults component...
-// ...existing helper functions (getHealthScoreColor, getConfidenceColor, getFoodIcon, HealthImpactSection) only once, and nothing else after...
+
