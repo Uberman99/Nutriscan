@@ -18,11 +18,14 @@ interface DailySummary {
 }
 
 export default function Dashboard() {
+<<<<<<< HEAD
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
   }, []);
+=======
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [summary, setSummary] = useState<DailySummary>({
@@ -238,12 +241,15 @@ export default function Dashboard() {
               <div className="text-lg text-gray-600">Loading meals...</div>
             </CardContent>
           </Card>
+<<<<<<< HEAD
         ) : !isClient ? (
           <Card className="border-2 border-gray-200">
             <CardContent className="p-8 text-center">
               <div className="text-lg text-gray-600">Syncing with local time...</div>
             </CardContent>
           </Card>
+=======
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
         ) : meals.length === 0 ? (
           <Card className="border-2 border-gray-200">
             <CardContent className="p-8 text-center">

@@ -13,12 +13,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing mealType or foods' }, { status: 400 });
     }
 
+<<<<<<< HEAD
     // Enforce authentication (must be present)
     const { auth } = await import('@clerk/nextjs/server');
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+=======
+    // For demo purposes, we'll use a hardcoded user ID
+    // In a real app, you'd get this from session/authentication
+    const userId = 'demo-user-123';
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
 
     const mealLog = await saveMealLog({
       userId,

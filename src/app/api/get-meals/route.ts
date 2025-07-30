@@ -7,11 +7,16 @@ export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
     
+<<<<<<< HEAD
     // Enforce authentication (must be present)
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     const effectiveUserId = userId;
+=======
+    // Use demo user if no auth user is available
+    const effectiveUserId = userId || 'demo-user-123';
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
 
     const { searchParams } = new URL(request.url);
     const date = searchParams.get('date');

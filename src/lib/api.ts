@@ -27,6 +27,7 @@ type ApiPromiseResult = { source: ApiSource; results: ApiResultItem[] };
 export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognitionResult[]> {
   console.log('🚀 Starting MAX ACCURACY food recognition with parallel processing and advanced scoring...');
 
+<<<<<<< HEAD
   // 1. Clarifai API (replace Google Vision)
   const clarifaiPromise: Promise<ApiPromiseResult> = (async () => {
     try {
@@ -40,6 +41,25 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
       const data = await response.json();
       // API returns { foods: [{ name, confidence, source }] }
       return { source: 'Clarifai', results: Array.isArray(data.foods) ? data.foods : [] };
+=======
+  const base64Image = await fileToBase64(imageFile);
+  console.log('📷 Image converted to base64, length:', base64Image.length);
+
+
+
+  // 1. Clarifai API (replace Google Vision)
+  const clarifaiPromise: Promise<ApiPromiseResult> = (async () => {
+    try {
+      const response = await fetch('/api/clarifai', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ image: base64Image }),
+      });
+      if (!response.ok) return { source: 'Clarifai', results: [] };
+      const data = await response.json();
+      // Assume API returns { labels: string[] } or similar
+      return { source: 'Clarifai', results: data.labels?.map((label: string) => ({ name: label, confidence: 0.7 })) || [] };
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
     } catch {
       return { source: 'Clarifai', results: [] };
     }
@@ -77,7 +97,11 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
         ...tesseract.results.map(r => r.name || '')
       ].filter(Boolean).slice(0, 10);
       if (candidates.length === 0) return { source: 'GPT', results: [] };
+<<<<<<< HEAD
       const response = await fetch('/api/gemini-vision', {
+=======
+      const response = await fetch('/api/gpt-food-names', {
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidates }),
@@ -224,7 +248,11 @@ function getBestSource(sources: Set<ApiSource>): ApiSource {
 export async function analyzeImage(imageFile: File): Promise<string[]> {
   try {
     const base64Image = await fileToBase64(imageFile);
+<<<<<<< HEAD
     const response = await fetch('/api/clarifai-vision', {
+=======
+    const response = await fetch('/api/clarifai', {
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -250,7 +278,11 @@ export async function analyzeFoodWithAI(foodItems: string[]): Promise<{
   suggestions: string[];
 }> {
   try {
+<<<<<<< HEAD
     const response = await fetch('/api/gemini-vision', {
+=======
+    const response = await fetch('/api/gemini', {
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

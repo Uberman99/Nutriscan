@@ -3,7 +3,10 @@ import { vision } from '@/lib/vision-client';
 import { mockFoodRecognition } from '@/lib/demo-data';
 
 export async function POST(request: NextRequest) {
+<<<<<<< HEAD
   return NextResponse.json({ error: 'This endpoint is deprecated. Use /api/scan-food instead.' }, { status: 410 });
+=======
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
   try {
     const { image } = await request.json();
     

@@ -78,5 +78,47 @@ function getAIAnalysis(foodNames: string[]) {
 }
 
 export async function POST(request: Request) {
+<<<<<<< HEAD
   return NextResponse.json({ error: 'This endpoint is deprecated. Use /api/scan-food instead.' }, { status: 410 });
+=======
+  try {
+    console.log('🚀 Received request for OCR analysis using Tesseract.js');
+    const formData = await request.formData();
+    const imageFile = formData.get('image');
+
+    if (!imageFile || typeof imageFile === 'string') {
+      console.error('❌ Missing image in the request');
+      return NextResponse.json({ error: 'Missing image' }, { status: 400 });
+    }
+
+    // Convert Blob to Buffer
+    const arrayBuffer = await imageFile.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+
+    console.log('✅ Image received. Starting OCR analysis...');
+    const extractedText = await extractTextFromImage(buffer);
+
+    console.log('✅ Extracted Text:', extractedText);
+
+    // Food detection
+    const foodItems = matchFoods(extractedText);
+    const foodNames = foodItems.map(f => f.name);
+    // Nutrition lookup
+    const nutritionData = foodNames.map(getNutritionData);
+    // AI analysis
+    const aiAnalysis = getAIAnalysis(foodNames);
+
+    return NextResponse.json({
+      extractedText,
+      foodItems,
+      aiAnalysis,
+      nutritionData,
+    });
+
+  } catch (error) {
+    console.error('🚨 Error in Tesseract.js OCR:', error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
+    return NextResponse.json({ error: 'Failed to analyze image with Tesseract.js', details: errorMessage }, { status: 500 });
+  }
+>>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
 }
