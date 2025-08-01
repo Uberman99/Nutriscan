@@ -1,9 +1,8 @@
+// src/lib/api.ts
 import { NON_FOOD_ITEMS } from './non-food-items';
 import { NutritionInfo } from './types';
 
 // Type definitions
-
-
 interface FoodRecognitionResult {
   name: string;
   confidence: number;
@@ -19,7 +18,6 @@ type ApiResultItem = {
   value?: number;
 };
 
-
 type ApiSource = 'Clarifai' | 'Nutritionix' | 'GPT' | 'Tesseract' | 'Fallback';
 type ApiPromiseResult = { source: ApiSource; results: ApiResultItem[] };
 
@@ -27,7 +25,6 @@ type ApiPromiseResult = { source: ApiSource; results: ApiResultItem[] };
 export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognitionResult[]> {
   console.log('🚀 Starting MAX ACCURACY food recognition with parallel processing and advanced scoring...');
 
-<<<<<<< HEAD
   // 1. Clarifai API (replace Google Vision)
   const clarifaiPromise: Promise<ApiPromiseResult> = (async () => {
     try {
@@ -41,25 +38,6 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
       const data = await response.json();
       // API returns { foods: [{ name, confidence, source }] }
       return { source: 'Clarifai', results: Array.isArray(data.foods) ? data.foods : [] };
-=======
-  const base64Image = await fileToBase64(imageFile);
-  console.log('📷 Image converted to base64, length:', base64Image.length);
-
-
-
-  // 1. Clarifai API (replace Google Vision)
-  const clarifaiPromise: Promise<ApiPromiseResult> = (async () => {
-    try {
-      const response = await fetch('/api/clarifai', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ image: base64Image }),
-      });
-      if (!response.ok) return { source: 'Clarifai', results: [] };
-      const data = await response.json();
-      // Assume API returns { labels: string[] } or similar
-      return { source: 'Clarifai', results: data.labels?.map((label: string) => ({ name: label, confidence: 0.7 })) || [] };
->>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
     } catch {
       return { source: 'Clarifai', results: [] };
     }
@@ -97,11 +75,7 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
         ...tesseract.results.map(r => r.name || '')
       ].filter(Boolean).slice(0, 10);
       if (candidates.length === 0) return { source: 'GPT', results: [] };
-<<<<<<< HEAD
       const response = await fetch('/api/gemini-vision', {
-=======
-      const response = await fetch('/api/gpt-food-names', {
->>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ candidates }),
@@ -193,6 +167,16 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
       foodScores[normalizedName].confidences.push(confidence);
     });
   });
+  
+  // Helper to pick the best source from a set
+  function getBestSource(sources: Set<ApiSource>): ApiSource {
+    if (sources.has('Nutritionix')) return 'Nutritionix';
+    if (sources.has('GPT')) return 'GPT';
+    if (sources.has('Clarifai')) return 'Clarifai';
+    if (sources.has('Tesseract')) return 'Tesseract';
+    return 'Fallback';
+  }
+  
   let consolidatedList = Object.entries(foodScores).map(([name, data]) => {
     if (data.sources.size > 1) {
       data.score *= (1 + (data.sources.size * 0.2));
@@ -224,14 +208,6 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
     });
   }
 
-// Helper to pick the best source from a set
-function getBestSource(sources: Set<ApiSource>): ApiSource {
-  if (sources.has('Nutritionix')) return 'Nutritionix';
-  if (sources.has('GPT')) return 'GPT';
-  if (sources.has('Clarifai')) return 'Clarifai';
-  if (sources.has('Tesseract')) return 'Tesseract';
-  return 'Fallback';
-}
   consolidatedList.sort((a, b) => b.score - a.score);
   if (consolidatedList.length === 0) {
     return [{ name: 'Food Item', confidence: 0.5, source: 'Fallback' }];
@@ -241,84 +217,6 @@ function getBestSource(sources: Set<ApiSource>): ApiSource {
     confidence: item.confidence,
     source: item.source,
   }));
-}
-
-
-// Clarifai API for food recognition
-export async function analyzeImage(imageFile: File): Promise<string[]> {
-  try {
-    const base64Image = await fileToBase64(imageFile);
-<<<<<<< HEAD
-    const response = await fetch('/api/clarifai-vision', {
-=======
-    const response = await fetch('/api/clarifai', {
->>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ image: base64Image }),
-    });
-    if (!response.ok) {
-      console.warn('Clarifai API response not ok, using fallback');
-      return ['Food Item', 'Meal', 'Snack'];
-    }
-    const data = await response.json();
-    return data.labels || ['Food Item', 'Meal', 'Snack'];
-  } catch (error) {
-    console.error('Error analyzing image:', error);
-    return ['Food Item', 'Meal', 'Snack'];
-  }
-}
-
-// Google Gemini API for food analysis
-export async function analyzeFoodWithAI(foodItems: string[]): Promise<{
-  description: string;
-  healthScore: number;
-  suggestions: string[];
-}> {
-  try {
-<<<<<<< HEAD
-    const response = await fetch('/api/gemini-vision', {
-=======
-    const response = await fetch('/api/gemini', {
->>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ foodItems }),
-    });
-
-    if (!response.ok) {
-      console.warn('Gemini API response not ok, using fallback');
-      // Return a fallback response instead of throwing
-      return {
-        description: 'A nutritious combination of foods providing essential nutrients.',
-        healthScore: 75,
-        suggestions: [
-          'Consider adding more vegetables for extra nutrients',
-          'Watch portion sizes for balanced nutrition',
-          'Stay hydrated throughout the day'
-        ]
-      };
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('Error analyzing food with AI:', error);
-    // Return fallback data instead of throwing
-    return {
-      description: 'A nutritious combination of foods providing essential nutrients.',
-      healthScore: 75,
-      suggestions: [
-        'Consider adding more vegetables for extra nutrients',
-        'Watch portion sizes for balanced nutrition',
-        'Stay hydrated throughout the day'
-      ]
-    };
-  }
 }
 
 // USDA FoodData Central API for nutrition data
@@ -383,16 +281,4 @@ export async function getPrices(foodName: string): Promise<{
       ]
     };
   }
-}
-
-function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const base64 = reader.result as string;
-      resolve(base64.split(',')[1]); // Remove data:image/... prefix
-    };
-    reader.onerror = error => reject(error);
-  });
 }

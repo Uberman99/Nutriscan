@@ -1,13 +1,8 @@
+// src/app/layout.tsx
 import type { Metadata } from "next";
-// import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
-
-// const inter = Inter({
-//   subsets: ["latin"],
-//   variable: "--font-inter",
-// });
 
 export const metadata: Metadata = {
   title: "NutriScan - Smart Food Analysis & Nutrition Tracker",
@@ -21,13 +16,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-<<<<<<< HEAD
     <html lang="en" suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
-=======
-    <html lang="en">
-      <body className={`font-sans antialiased`}>
->>>>>>> 248da69a8d9281c86ca4da4f6f5c83429d127f98
         <Navigation />
         <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 relative">
           {/* Global background decorations */}
