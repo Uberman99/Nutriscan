@@ -34,6 +34,9 @@ export default function Dashboard() {
   const [selectedDate, setSelectedDate] = useState(
     () => new Date().toISOString().split("T")[0],
   );
+
+  // Safeguard to ensure date is never empty
+  const safeSelectedDate = selectedDate || new Date().toISOString().split("T")[0];
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [summary, setSummary] = useState<DailySummary>({
     calories: 0,
@@ -116,23 +119,23 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
-      fetchMeals(selectedDate);
+      fetchMeals(safeSelectedDate);
     } else if (isLoaded && !isSignedIn) {
       setLoading(false);
       setMeals([]);
       calculateSummary([]);
     }
-  }, [selectedDate, isLoaded, isSignedIn, fetchMeals, calculateSummary]);
+  }, [safeSelectedDate, isLoaded, isSignedIn, fetchMeals, calculateSummary]);
 
   const handleClearMeals = async () => {
-    if (!selectedDate || meals.length === 0) return;
+    if (!safeSelectedDate || meals.length === 0) return;
 
     setIsClearing(true);
     try {
       const response = await fetch("/api/clear-meals", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ date: selectedDate }),
+        body: JSON.stringify({ date: safeSelectedDate }),
       });
 
       const result = await response.json();
@@ -144,7 +147,7 @@ export default function Dashboard() {
         description: "Your meals for the selected date have been cleared.",
         variant: "success",
       });
-      fetchMeals(selectedDate); // Refresh meal list
+      fetchMeals(safeSelectedDate); // Refresh meal list
     } catch (error) {
       console.error("[Dashboard] Error clearing meals:", error);
       toast({
