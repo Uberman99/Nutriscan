@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useUser } from '@clerk/nextjs'
 import Image from 'next/image'
 import imageCompression from 'browser-image-compression';
 import { Camera, Upload, AlertCircle, Plus } from 'lucide-react'
@@ -41,6 +42,7 @@ interface ScanResults {
 }
 
 export default function FoodScanner() {
+  const { isSignedIn, isLoaded } = useUser()
   const [isScanning, setIsScanning] = useState(false)
   const [results, setResults] = useState<ScanResults | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -50,38 +52,63 @@ export default function FoodScanner() {
 
   // Function to log detected foods without nutrition data
   const logDetectedFoods = async (mealType: string) => {
-    if (!results?.foodItems.length) return;
+    if (!results?.foodItems.length) {
+      alert('❌ No food items detected to log. Please scan a food item first.');
+      return;
+    }
+    
+    // Check authentication status
+    if (!isLoaded) {
+      alert('🔄 Please wait while we verify your authentication status...');
+      return;
+    }
+    
+    if (!isSignedIn) {
+      alert('🔒 Please sign in to log your meals. You can sign in from the navigation menu.');
+      return;
+    }
+    
+    console.log('🍽️ Starting meal log process...', { mealType, foodItems: results.foodItems });
     
     try {
+      const payload = {
+        mealType,
+        foods: results.foodItems.map(item => ({
+          name: item.name,
+          calories: 100, // Default fallback calories
+          protein: 5,    // Default fallback values
+          carbs: 15,
+          fat: 3,
+          fiber: 2,
+          confidence: item.confidence,
+          source: item.source
+        }))
+      };
+      
+      console.log('📤 Sending meal log request:', payload);
+      
       const response = await fetch('/api/log-meal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          mealType,
-          foods: results.foodItems.map(item => ({
-            name: item.name,
-            calories: 100, // Default fallback calories
-            protein: 5,    // Default fallback values
-            carbs: 15,
-            fat: 3,
-            fiber: 2,
-            confidence: item.confidence,
-            source: item.source
-          }))
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (response.ok) {
+      console.log('📥 Meal log response status:', response.status);
+      const responseData = await response.json();
+      console.log('📥 Meal log response data:', responseData);
+
+      if (response.ok && responseData.success) {
         alert(`✅ Meal logged successfully as ${mealType}!`);
+        console.log('✅ Meal logging successful:', responseData);
       } else {
-        console.error('Failed to log meal');
-        alert('❌ Failed to log meal. Please try again.');
+        console.error('❌ Failed to log meal:', responseData);
+        alert(`❌ Failed to log meal: ${responseData.error || 'Unknown error'}. Please try again.`);
       }
     } catch (error) {
-      console.error('Error logging meal:', error);
-      alert('❌ Error logging meal. Please try again.');
+      console.error('❌ Error logging meal:', error);
+      alert(`❌ Error logging meal: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     }
   };
 
@@ -372,24 +399,36 @@ export default function FoodScanner() {
                   <Plus className="h-5 w-5 text-blue-500" />
                   Log This Meal
                 </h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {[
-                    { type: 'breakfast', icon: '🌅', label: 'Breakfast' },
-                    { type: 'lunch', icon: '☀️', label: 'Lunch' },
-                    { type: 'dinner', icon: '🌙', label: 'Dinner' },
-                    { type: 'snack', icon: '🍎', label: 'Snack' }
-                  ].map(({ type, icon, label }) => (
-                    <Button
-                      key={type}
-                      onClick={() => logDetectedFoods(type)}
-                      className="flex flex-col items-center gap-2 p-4 h-auto bg-white hover:bg-blue-50 border-2 border-blue-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
-                      variant="outline"
-                    >
-                      <span className="text-2xl">{icon}</span>
-                      <span className="font-medium text-sm">{label}</span>
-                    </Button>
-                  ))}
-                </div>
+                
+                {!isLoaded ? (
+                  <div className="text-center py-4">
+                    <p className="text-gray-600">🔄 Checking authentication status...</p>
+                  </div>
+                ) : !isSignedIn ? (
+                  <div className="text-center py-4">
+                    <p className="text-amber-600 mb-3">🔒 Please sign in to log your meals</p>
+                    <p className="text-sm text-gray-600">You can sign in from the navigation menu</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {[
+                      { type: 'breakfast', icon: '🌅', label: 'Breakfast' },
+                      { type: 'lunch', icon: '☀️', label: 'Lunch' },
+                      { type: 'dinner', icon: '🌙', label: 'Dinner' },
+                      { type: 'snack', icon: '🍎', label: 'Snack' }
+                    ].map(({ type, icon, label }) => (
+                      <Button
+                        key={type}
+                        onClick={() => logDetectedFoods(type)}
+                        className="flex flex-col items-center gap-2 p-4 h-auto bg-white hover:bg-blue-50 border-2 border-blue-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                        variant="outline"
+                      >
+                        <span className="text-2xl">{icon}</span>
+                        <span className="font-medium text-sm">{label}</span>
+                      </Button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           ) : (

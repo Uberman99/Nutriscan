@@ -5,6 +5,7 @@
 "use client";
 
 import { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Activity, Star, Utensils, HeartPulse, Flame, BrainCircuit, Plus, CheckCircle, Camera } from "lucide-react";
@@ -25,39 +26,64 @@ interface NutritionResultsProps {
 
 export default function NutritionResults({ results, onClear }: NutritionResultsProps) {
   const { foodItems, aiAnalysis, nutritionData } = results;
+  const { isSignedIn, isLoaded } = useUser();
   const [isLogging, setIsLogging] = useState(false);
   const [loggedMeal, setLoggedMeal] = useState<string | null>(null);
 
   // Function to log meal
   const logMeal = async (mealType: string) => {
+    // Check authentication status
+    if (!isLoaded) {
+      alert('🔄 Please wait while we verify your authentication status...');
+      return;
+    }
+    
+    if (!isSignedIn) {
+      alert('🔒 Please sign in to log your meals. You can sign in from the navigation menu.');
+      return;
+    }
+    
     setIsLogging(true);
+    console.log('🍽️ Logging meal with nutrition data...', { mealType, nutritionData });
+    
     try {
+      const payload = {
+        mealType,
+        foods: nutritionData.map(nutrition => ({
+          name: nutrition.food_name,
+          calories: nutrition.nf_calories,
+          protein: nutrition.nf_protein,
+          carbs: nutrition.nf_total_carbohydrate,
+          fat: nutrition.nf_total_fat,
+          fiber: nutrition.nf_dietary_fiber,
+        }))
+      };
+      
+      console.log('📤 Sending nutrition meal log request:', payload);
+      
       const response = await fetch('/api/log-meal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          mealType,
-          foods: nutritionData.map(nutrition => ({
-            name: nutrition.food_name,
-            calories: nutrition.nf_calories,
-            protein: nutrition.nf_protein,
-            carbs: nutrition.nf_total_carbohydrate,
-            fat: nutrition.nf_total_fat,
-            fiber: nutrition.nf_dietary_fiber,
-          }))
-        })
+        body: JSON.stringify(payload)
       });
 
-      if (response.ok) {
+      console.log('📥 Nutrition meal log response status:', response.status);
+      const responseData = await response.json();
+      console.log('📥 Nutrition meal log response data:', responseData);
+
+      if (response.ok && responseData.success) {
         setLoggedMeal(mealType);
         setTimeout(() => setLoggedMeal(null), 3000); // Clear success message after 3 seconds
+        console.log('✅ Nutrition meal logging successful:', responseData);
       } else {
-        console.error('Failed to log meal');
+        console.error('❌ Failed to log nutrition meal:', responseData);
+        alert(`❌ Failed to log meal: ${responseData.error || 'Unknown error'}. Please try again.`);
       }
     } catch (error) {
-      console.error('Error logging meal:', error);
+      console.error('❌ Error logging nutrition meal:', error);
+      alert(`❌ Error logging meal: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
     } finally {
       setIsLogging(false);
     }
@@ -224,6 +250,15 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
               <span className="text-green-800 font-medium">
                 Successfully logged as {loggedMeal}!
               </span>
+            </div>
+          ) : !isLoaded ? (
+            <div className="text-center py-4">
+              <p className="text-gray-600">🔄 Checking authentication status...</p>
+            </div>
+          ) : !isSignedIn ? (
+            <div className="text-center py-4">
+              <p className="text-amber-600 mb-3">🔒 Please sign in to log your meals</p>
+              <p className="text-sm text-gray-600">You can sign in from the navigation menu</p>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">

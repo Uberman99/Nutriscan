@@ -78,14 +78,17 @@ export default function Dashboard() {
 
   const fetchMeals = useCallback(
     async (date: string) => {
+      // Ensure we have a valid date before making the API call
+      const validDate = date && date.trim() !== '' ? date : new Date().toISOString().split('T')[0];
+      
       setLoading(true);
       try {
         const todayForComparison = new Date().toISOString().split('T')[0];
         console.log(`[Dashboard] 📅 Today's date: ${todayForComparison}`);
-        console.log(`[Dashboard] 📅 Fetching meals for date: ${date}`);
-        console.log(`[Dashboard] 📅 Date match: ${date === todayForComparison ? 'YES' : 'NO'}`);
+        console.log(`[Dashboard] 📅 Fetching meals for date: ${validDate}`);
+        console.log(`[Dashboard] 📅 Date match: ${validDate === todayForComparison ? 'YES' : 'NO'}`);
         
-        const response = await fetch(`/api/get-meals?date=${date}`);
+        const response = await fetch(`/api/get-meals?date=${validDate}`);
 
         console.log(`[Dashboard] API response status: ${response.status}`);
         const data = await response.json();
@@ -235,7 +238,13 @@ export default function Dashboard() {
             <input
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                const newDate = e.target.value;
+                // Only update if the new date is not empty
+                if (newDate && newDate.trim() !== '') {
+                  setSelectedDate(newDate);
+                }
+              }}
               className="px-4 py-2 border-2 border-blue-200 rounded-lg focus:border-blue-400 focus:outline-none"
             />
             <Button

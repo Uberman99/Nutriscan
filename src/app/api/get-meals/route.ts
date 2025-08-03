@@ -32,14 +32,15 @@ export async function GET(request: NextRequest) {
     const effectiveUserId = user.id;
 
     const { searchParams } = new URL(request.url);
-    const date = searchParams.get('date');
+    let date = searchParams.get('date');
     
-    if (!date) {
-      return NextResponse.json({ 
-        success: false,
-        error: 'Date parameter is required',
-      }, { status: 400 });
+    // If no date is provided or it's empty, use today's date
+    if (!date || date.trim() === '') {
+      date = new Date().toISOString().split('T')[0];
+      console.log('📅 No date provided, using today:', date);
     }
+    
+    console.log('📅 Using date for meal fetch:', date);
 
     let meals = [];
     try {
