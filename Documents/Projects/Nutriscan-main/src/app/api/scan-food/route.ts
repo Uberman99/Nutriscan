@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { currentUser } from '@clerk/nextjs/server';
-import { analyzeImageForFood } from '@/lib/api';
+import { analyzeImageForFood, getNutritionData } from '@/lib/api';
 
 export const runtime = 'edge';
 
