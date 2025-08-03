@@ -77,7 +77,11 @@ export default function Dashboard() {
     async (date: string) => {
       setLoading(true);
       try {
-        console.log(`[Dashboard] Fetching meals for date: ${date}`);
+        const todayForComparison = new Date().toISOString().split('T')[0];
+        console.log(`[Dashboard] 📅 Today's date: ${todayForComparison}`);
+        console.log(`[Dashboard] 📅 Fetching meals for date: ${date}`);
+        console.log(`[Dashboard] 📅 Date match: ${date === todayForComparison ? 'YES' : 'NO'}`);
+        
         const response = await fetch(`/api/get-meals?date=${date}`);
 
         console.log(`[Dashboard] API response status: ${response.status}`);

@@ -20,9 +20,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing mealType or foods' }, { status: 400 });
     }
 
+    const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    console.log('📅 Logging meal with date:', todayDate);
+    
     const mealLog = await saveMealLog({
       userId: user.id, // Use real Clerk user ID
-      date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+      date: todayDate,
       mealType,
       foods,
     });
