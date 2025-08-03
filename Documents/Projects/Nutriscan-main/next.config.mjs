@@ -23,7 +23,20 @@ const nextConfig = {
         ...config.resolve.fallback,
         fs: false,
       };
+      
+      // Add Tesseract.js worker configuration
+      config.module.rules.push({
+        test: /\.worker\.js$/,
+        use: { loader: 'worker-loader' }
+      });
     }
+    
+    // Ignore tesseract.js worker files to prevent bundling issues
+    config.externals = config.externals || [];
+    if (isServer) {
+      config.externals.push('tesseract.js');
+    }
+    
     return config;
   },
 };

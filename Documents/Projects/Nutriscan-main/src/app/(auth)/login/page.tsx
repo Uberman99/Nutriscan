@@ -8,6 +8,21 @@ import { Chrome } from 'lucide-react';
 
 export default function LoginPage() {
   const { signIn } = useSignIn();
+
+  const handleGoogleSignIn = async () => {
+    if (!signIn) return;
+    
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: '/dashboard',
+        redirectUrlComplete: '/dashboard',
+      });
+    } catch (error) {
+      console.error('Error signing in:', error);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="w-full max-w-md">
@@ -17,7 +32,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <Button 
-            onClick={() => signIn({ strategy: 'oauth_google', redirectUrl: '/dashboard' })}
+            onClick={handleGoogleSignIn}
             className="w-full"
           >
             <Chrome className="mr-2 h-4 w-4" />

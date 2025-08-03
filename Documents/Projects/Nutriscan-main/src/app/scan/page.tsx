@@ -41,10 +41,10 @@ export default function ScanPage() {
                 { emoji: '🍎', name: 'Apple', color: 'from-red-100 to-green-100' },
                 { emoji: '🍕', name: 'Pizza', color: 'from-yellow-100 to-orange-100' },
                 { emoji: '🍰', name: 'Cake', color: 'from-pink-100 to-purple-100' },
-                { emoji: '🥟', name: 'Samosa', color: 'from-amber-100 to-yellow-100' },
-                { emoji: '🍛', name: 'Biryani', color: 'from-orange-100 to-red-100' },
-                { emoji: '🧀', name: 'Rasmalai', color: 'from-blue-100 to-indigo-100' },
-                { emoji: '🌮', name: 'Panipuri', color: 'from-green-100 to-emerald-100' }
+                { emoji: '🌯', name: 'Wraps', color: 'from-amber-100 to-yellow-100' },
+                { emoji: '🥞', name: 'Breakfast', color: 'from-orange-100 to-red-100' },
+                { emoji: '🍨', name: 'Ice Cream', color: 'from-blue-100 to-indigo-100' },
+                { emoji: '🌮', name: 'Tacos', color: 'from-green-100 to-emerald-100' }
               ].map((food, index) => (
                 <div 
                   key={index} 

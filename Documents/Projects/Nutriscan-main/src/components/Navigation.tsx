@@ -2,7 +2,8 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Scan, BookOpen, Home, Camera, Info, BarChart3 } from 'lucide-react'
+import { useUser, SignInButton, UserButton } from '@clerk/nextjs'
+import { Scan, BookOpen, Home, Camera, Info, BarChart3, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const navigation = [
@@ -15,6 +16,7 @@ const navigation = [
 
 export default function Navigation() {
   const pathname = usePathname()
+  const { isSignedIn, user } = useUser()
 
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b-2 border-gradient-to-r from-emerald-200 to-blue-200 shadow-xl sticky top-0 z-50">
@@ -54,6 +56,31 @@ export default function Navigation() {
                 </Link>
               )
             })}
+          </div>
+          
+          {/* Authentication Section */}
+          <div className="flex items-center space-x-4">
+            {isSignedIn ? (
+              <div className="flex items-center space-x-3">
+                <span className="hidden sm:block text-sm text-gray-600">
+                  Welcome, {user?.firstName || 'User'}!
+                </span>
+                <UserButton 
+                  appearance={{
+                    elements: {
+                      avatarBox: "w-9 h-9 rounded-full ring-2 ring-emerald-200 hover:ring-emerald-300 transition-all"
+                    }
+                  }}
+                />
+              </div>
+            ) : (
+              <SignInButton mode="modal">
+                <button className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-xl font-semibold hover:from-emerald-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
+                  <User className="h-4 w-4" />
+                  <span>Sign In</span>
+                </button>
+              </SignInButton>
+            )}
           </div>
         </div>
       </div>

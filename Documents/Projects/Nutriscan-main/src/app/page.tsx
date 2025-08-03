@@ -62,8 +62,8 @@ export default function Home() {
             <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-blue-200">
               <span className="text-sm font-medium text-blue-700">🔬 USDA Database</span>
             </div>
-            <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-purple-200">
-              <span className="text-sm font-medium text-purple-700">🤖 Google AI</span>
+                        <div className="bg-gradient-to-r from-purple-100 to-indigo-100 p-4 rounded-2xl border border-purple-200">
+              <span className="text-sm font-medium text-purple-700">🤖 Advanced AI</span>
             </div>
             <div className="bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg border border-orange-200">
               <span className="text-sm font-medium text-orange-700">⚡ Sub-second Processing</span>
@@ -90,7 +90,7 @@ export default function Home() {
           </div>
           
           <p className="text-lg text-gray-700 mb-12 max-w-2xl mx-auto">
-            From Australian classics to international cuisines, Indian delights to sweet treats - our advanced AI achieves **99.7% meal detection accuracy** with extreme precision! ⚡
+            From Australian classics to international cuisines, healthy options to sweet treats - our advanced AI achieves **99.7% meal detection accuracy** with extreme precision! ⚡
           </p>
           
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
@@ -219,7 +219,7 @@ export default function Home() {
               </CardHeader>
               <CardContent>
                 <p className="text-gray-600">
-                  Receive personalized health recommendations powered by Google Gemini AI.
+                  Receive personalized health recommendations powered by advanced AI technology.
                 </p>
               </CardContent>
             </Card>

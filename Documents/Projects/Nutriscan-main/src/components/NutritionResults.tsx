@@ -4,10 +4,10 @@
 
 "use client";
 
-import { Card, CardContent } from "@/components/ui/card";
+import { useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Activity, Star, Utensils, HeartPulse, Flame, BrainCircuit } from "lucide-react";
+import { Activity, Star, Utensils, HeartPulse, Flame, BrainCircuit, Plus, CheckCircle, Camera } from "lucide-react";
 import { NutritionInfo } from "@/lib/types";
 
 interface NutritionResultsProps {
@@ -25,6 +25,43 @@ interface NutritionResultsProps {
 
 export default function NutritionResults({ results, onClear }: NutritionResultsProps) {
   const { foodItems, aiAnalysis, nutritionData } = results;
+  const [isLogging, setIsLogging] = useState(false);
+  const [loggedMeal, setLoggedMeal] = useState<string | null>(null);
+
+  // Function to log meal
+  const logMeal = async (mealType: string) => {
+    setIsLogging(true);
+    try {
+      const response = await fetch('/api/log-meal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mealType,
+          foods: nutritionData.map(nutrition => ({
+            name: nutrition.food_name,
+            calories: nutrition.nf_calories,
+            protein: nutrition.nf_protein,
+            carbs: nutrition.nf_total_carbohydrate,
+            fat: nutrition.nf_total_fat,
+            fiber: nutrition.nf_dietary_fiber,
+          }))
+        })
+      });
+
+      if (response.ok) {
+        setLoggedMeal(mealType);
+        setTimeout(() => setLoggedMeal(null), 3000); // Clear success message after 3 seconds
+      } else {
+        console.error('Failed to log meal');
+      }
+    } catch (error) {
+      console.error('Error logging meal:', error);
+    } finally {
+      setIsLogging(false);
+    }
+  };
 
   // Animated health score ring
   const HealthScoreRing = ({ score }: { score: number }) => {
@@ -67,60 +104,97 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh]">
-      <div className="w-full max-w-2xl bg-white/80 backdrop-blur-lg rounded-3xl shadow-2xl border border-slate-200 p-8 mb-8 relative overflow-hidden">
-        {/* Gradient accent */}
-        <div className="absolute -top-10 -right-10 w-40 h-40 bg-gradient-to-br from-green-200 via-blue-100 to-transparent rounded-full opacity-40 blur-2xl z-0" />
-        <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-gradient-to-tr from-yellow-100 via-pink-100 to-transparent rounded-full opacity-40 blur-2xl z-0" />
+    <div className="flex flex-col items-center justify-center min-h-[60vh] px-4">
+      <div className="w-full max-w-4xl bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-200/50 p-8 mb-8 relative overflow-hidden">
+        {/* Enhanced gradient accents */}
+        <div className="absolute -top-20 -right-20 w-60 h-60 bg-gradient-to-br from-green-300/30 via-blue-200/30 to-transparent rounded-full opacity-60 blur-3xl z-0" />
+        <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-gradient-to-tr from-yellow-200/30 via-pink-200/30 to-transparent rounded-full opacity-60 blur-3xl z-0" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-gradient-to-r from-purple-100/20 to-blue-100/20 rounded-full opacity-40 blur-3xl z-0" />
+        
         {/* Health Score and Food List */}
-        <div className="flex flex-col md:flex-row items-center gap-8 z-10 relative">
-          <HealthScoreRing score={aiAnalysis.healthScore} />
-          <div className="flex-1">
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-2 flex items-center gap-2">
-              <Utensils className="h-6 w-6 text-green-500" />
+        <div className="flex flex-col lg:flex-row items-center gap-8 z-10 relative">
+          <div className="flex-shrink-0">
+            <HealthScoreRing score={aiAnalysis.healthScore} />
+          </div>
+          <div className="flex-1 text-center lg:text-left">
+            <h2 className="text-3xl font-extrabold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-3 flex items-center justify-center lg:justify-start gap-3">
+              <Utensils className="h-7 w-7 text-green-500" />
+              Detected Foods
             </h2>
-            <div className="flex flex-wrap gap-2 mb-2">
+            <div className="flex flex-wrap gap-3 mb-4 justify-center lg:justify-start">
               {foodItems.map((item, idx) => (
-                <span key={idx} className="inline-flex items-center px-3 py-1 rounded-full font-semibold bg-gradient-to-r from-green-100 to-blue-100 text-green-900 shadow-sm border border-green-200 text-base">{item.name}</span>
+                <span key={idx} className="inline-flex items-center px-4 py-2 rounded-full font-semibold bg-gradient-to-r from-green-100 to-blue-100 text-green-900 shadow-lg border border-green-200/50 text-base hover:shadow-xl transition-shadow duration-200">
+                  {item.name}
+                  <Badge className="ml-2 bg-green-200 text-green-800 text-xs px-2 py-0.5">
+                    {Math.round(item.confidence * 100)}%
+                  </Badge>
+                </span>
               ))}
             </div>
-            <div className="text-sm text-gray-500 mb-2">{aiAnalysis.description}</div>
-            <div className="flex flex-wrap gap-2">
+            <div className="text-slate-600 mb-4 text-lg leading-relaxed">{aiAnalysis.description}</div>
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
               {aiAnalysis.suggestions.map((s, i) => (
-                <Badge key={i} className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full font-medium shadow-sm">💡 {s}</Badge>
+                <Badge key={i} className="bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-800 px-4 py-2 rounded-full font-medium shadow-sm hover:shadow-md transition-shadow duration-200 border border-blue-200/50">
+                  💡 {s}
+                </Badge>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Nutrition Table */}
-        <div className="mt-8">
-          <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center gap-2">
-            <Star className="h-5 w-5 text-yellow-400" /> Nutrition Facts
+        {/* Enhanced Nutrition Table */}
+        <div className="mt-10">
+          <h3 className="text-2xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent mb-6 flex items-center gap-3">
+            <Star className="h-6 w-6 text-yellow-500" /> 
+            Detailed Nutrition Facts
           </h3>
-          <div className="overflow-x-auto rounded-xl bg-white/70 shadow-inner">
-            <table className="min-w-full text-sm text-slate-700">
+          <div className="overflow-x-auto rounded-2xl bg-white/80 shadow-xl border border-slate-200/50">
+            <table className="min-w-full text-sm">
               <thead>
-                <tr className="bg-gradient-to-r from-green-100 to-blue-100">
-                  <th className="px-4 py-2 text-left font-semibold">Food</th>
-                  <th className="px-4 py-2 text-left font-semibold">Calories</th>
-                  <th className="px-4 py-2 text-left font-semibold">Protein</th>
-                  <th className="px-4 py-2 text-left font-semibold">Carbs</th>
-                  <th className="px-4 py-2 text-left font-semibold">Fat</th>
-                  <th className="px-4 py-2 text-left font-semibold">Fiber</th>
-                  <th className="px-4 py-2 text-left font-semibold">Sugars</th>
+                <tr className="bg-gradient-to-r from-green-50 to-blue-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Food Item</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Calories</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Protein</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Carbs</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Fat</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Fiber</th>
+                  <th className="px-6 py-4 text-left font-bold text-slate-800 text-base">Sugars</th>
                 </tr>
               </thead>
               <tbody>
-                {nutritionData.map((n, idx) => (
-                  <tr key={idx} className="even:bg-slate-50">
-                    <td className="px-4 py-2 font-semibold flex items-center gap-2">{n.food_name}</td>
-                    <td className="px-4 py-2">{n.nf_calories ?? '-'}</td>
-                    <td className="px-4 py-2">{n.nf_protein ?? '-'}g</td>
-                    <td className="px-4 py-2">{n.nf_total_carbohydrate ?? '-'}g</td>
-                    <td className="px-4 py-2">{n.nf_total_fat ?? '-'}g</td>
-                    <td className="px-4 py-2">{n.nf_dietary_fiber ?? '-'}g</td>
-                    <td className="px-4 py-2">{n.nf_sugars ?? '-'}g</td>
+                {nutritionData.map((nutrition, idx) => (
+                  <tr key={idx} className="border-b border-slate-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-green-50/50 transition-colors duration-200">
+                    <td className="px-6 py-4 font-semibold text-slate-800 text-base">{nutrition.food_name}</td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                        🔥 {nutrition.nf_calories || 0}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 text-red-800 border border-red-200">
+                        🥩 {nutrition.nf_protein || 0}g
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                        🌾 {nutrition.nf_total_carbohydrate || 0}g
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800 border border-purple-200">
+                        🥑 {nutrition.nf_total_fat || 0}g
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 border border-green-200">
+                        🌿 {nutrition.nf_dietary_fiber || 0}g
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-pink-100 text-pink-800 border border-pink-200">
+                        🍯 {nutrition.nf_sugars || 0}g
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -137,10 +211,52 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
           ))}
         </div>
 
+        {/* Meal Logging Section */}
+        <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl border border-blue-200">
+          <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+            <Plus className="h-5 w-5 text-blue-500" />
+            Log This Meal
+          </h3>
+          
+          {loggedMeal ? (
+            <div className="flex items-center gap-2 p-4 bg-green-100 rounded-xl border border-green-300">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span className="text-green-800 font-medium">
+                Successfully logged as {loggedMeal}!
+              </span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { type: 'breakfast', icon: '🌅', label: 'Breakfast' },
+                { type: 'lunch', icon: '☀️', label: 'Lunch' },
+                { type: 'dinner', icon: '🌙', label: 'Dinner' },
+                { type: 'snack', icon: '🍎', label: 'Snack' }
+              ].map(({ type, icon, label }) => (
+                <Button
+                  key={type}
+                  onClick={() => logMeal(type)}
+                  disabled={isLogging}
+                  className="flex flex-col items-center gap-2 p-4 h-auto bg-white hover:bg-blue-50 border-2 border-blue-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                  variant="outline"
+                >
+                  <span className="text-2xl">{icon}</span>
+                  <span className="font-medium text-sm">{isLogging ? 'Logging...' : label}</span>
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Actions */}
-        <div className="flex justify-between items-center mt-8">
-          <Button onClick={onClear} variant="outline" className="rounded-full px-6 py-2 border-2 border-slate-300 bg-white/70 hover:bg-slate-100 shadow">Scan Another</Button>
-          {/* You may want to implement logMeal if needed */}
+        <div className="flex justify-center items-center mt-8">
+          <Button 
+            onClick={onClear} 
+            className="rounded-full px-8 py-3 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5"
+          >
+            <Camera className="h-4 w-4 mr-2" />
+            Scan Another Meal
+          </Button>
         </div>
       </div>
     </div>

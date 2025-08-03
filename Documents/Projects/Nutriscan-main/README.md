@@ -5,12 +5,12 @@ NutriScan is an AI-powered food analysis application that uses computer vision a
 ## Features
 
 ### 🤖 AI-Powered Food Recognition
-- **Google Vision API**: Advanced computer vision for accurate food identification
+- **Advanced AI Vision**: State-of-the-art computer vision for accurate food identification
 - **Multi-food Detection**: Recognizes multiple food items in a single image
 - **Real-time Analysis**: Instant food recognition from photos
 
 ### 💡 Smart Health Insights
-- **Google Gemini AI**: Personalized health recommendations and analysis
+- **Smart AI Analysis**: Personalized health recommendations and analysis
 - **Health Score**: Get a health score from 1-100 for any meal
 - **Custom Suggestions**: AI-powered recommendations to improve your nutrition
 
@@ -40,17 +40,17 @@ NutriScan is an AI-powered food analysis application that uses computer vision a
 
 ### Backend & Database
 - **Next.js API Routes**: Server-side API endpoints
-- **Google Cloud Vision API**: Food recognition and image analysis
-- **Google Gemini AI**: Natural language processing and health insights
-- **better-sqlite3**: Local SQLite database for meal logging
+- **Advanced AI Vision**: Food recognition and image analysis
+- **Smart AI Analysis**: Natural language processing and health insights
+- **Vercel Postgres**: Cloud database for meal logging
 
 ## Getting Started
 
 ### Prerequisites
 - Node.js 18+ installed
 - npm or yarn package manager
-- Google Cloud account with Vision API enabled
 - Google AI Studio account for Gemini API
+- Nutritionix API account for nutrition data
 
 ### Installation
 
@@ -66,10 +66,11 @@ NutriScan is an AI-powered food analysis application that uses computer vision a
    ```
 
 3. **Set up environment variables**
-   Create a `.env.local` file by copying `.env.example` (if it exists) and add your API keys.
+   Create a `.env.local` file by copying `.env.example` and add your API keys.
    ```
    GOOGLE_API_KEY=your_gemini_api_key
-   GCP_CREDENTIALS=your_gcp_credentials_json_string
+   NUTRITIONIX_API_KEY=your_nutritionix_api_key
+   NUTRITIONIX_APP_ID=your_nutritionix_app_id
    ```
 
 4. **Initialize the database**
@@ -158,9 +159,9 @@ nutriscan/
 
 For full functionality, this application requires the following API keys:
 
-1. **Google Cloud Vision API** - For food recognition
-2. **Google Gemini AI API** - For health insights
-3. **USDA FoodData Central API** - For nutrition data
+1. **Gemini AI API** - For smart food analysis and health insights
+2. **Nutritionix API** - For detailed nutrition data
+3. **USDA FoodData Central API** - For additional nutrition information
 
 We've made it easy to set up your API keys:
 

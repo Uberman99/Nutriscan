@@ -38,19 +38,111 @@ export async function POST(request: NextRequest) {
         });
     }
     
-    // If no API key is available, fail in production, else use mock data in development
+    // If no API key is available, use mock data
     if (!USDA_API_KEY) {
-      if (process.env.NODE_ENV === 'production') {
-        return NextResponse.json({ error: 'USDA API key is missing. Nutrition endpoint not available.' }, { status: 501 });
-      }
-      // ...existing code for mock data and generic fallback...
+      console.warn('USDA API key is missing. Using mock data for USDA Nutrition API');
+      
       const lowerFoodName = foodName.toLowerCase();
       const mockDataKey = Object.keys(mockNutritionData).find(key => key.toLowerCase() === lowerFoodName);
       const mockData = mockDataKey ? mockNutritionData[mockDataKey as keyof typeof mockNutritionData] : undefined;
+
       if (mockData) {
-        // ...existing code for mockData...
+        // Define a base type for what we need to access to avoid using 'any'
+        interface BaseMockData {
+            foodName: string;
+            calories: number;
+            macronutrients?: { name: string; amount: number; unit: string }[];
+            exactPortion?: { unit: string; weight: number };
+            dataSource?: string;
+        }
+        const safeMockData = mockData as BaseMockData;
+
+        interface Nutrient { name: string; amount: number; unit: string; }
+
+        const getNutrient = (name: string) => {
+            if (safeMockData.macronutrients) {
+                return safeMockData.macronutrients.find((n: Nutrient) => n.name.toLowerCase().includes(name.toLowerCase()));
+            }
+            return undefined;
+        }
+        
+        const carbsNutrient = getNutrient('carbohydrate');
+        const carbs = carbsNutrient ? carbsNutrient.amount : 0;
+
+        const healthData = getHealthData(safeMockData.foodName);
+        const glycemicLoad = healthData.glycemicIndex ? calculateGlycemicLoad(healthData.glycemicIndex, carbs) : undefined;
+
+        const healthImpact: HealthImpactData = {
+          glycemicIndex: healthData.glycemicIndex,
+          glycemicLoad: glycemicLoad,
+          inflammatoryScore: healthData.inflammatoryScore,
+          inflammatoryText: getInflammatoryText(healthData.inflammatoryScore),
+        };
+
+        const nutritionInfo: NutritionInfo = {
+          food_name: safeMockData.foodName,
+          brand_name: safeMockData.dataSource || 'MockData',
+          serving_qty: 1,
+          serving_unit: safeMockData.exactPortion?.unit || 'serving',
+          serving_weight_grams: safeMockData.exactPortion?.weight || 100,
+          nf_calories: safeMockData.calories,
+          nf_total_fat: getNutrient('fat')?.amount || null,
+          nf_saturated_fat: getNutrient('saturated fat')?.amount || null,
+          nf_cholesterol: null,
+          nf_sodium: getNutrient('sodium')?.amount || null,
+          nf_total_carbohydrate: carbs,
+          nf_dietary_fiber: getNutrient('fiber')?.amount || null,
+          nf_sugars: getNutrient('sugars')?.amount || null,
+          nf_protein: getNutrient('protein')?.amount || null,
+          nf_potassium: null,
+          nf_p: null,
+          healthData: healthImpact,
+        };
+        
+        return NextResponse.json(nutritionInfo);
       }
-      // ...existing code for generic fallback...
+      
+      // Fallback for generic terms if no specific mock data is found
+      const genericTerms = ['food item', 'mixed meal', 'prepared meal', 'object', 'thing'];
+      if (genericTerms.some(term => lowerFoodName.includes(term))) {
+        const genericData = {
+          food_name: 'Mixed Food Item',
+          nf_calories: 250,
+          nf_protein: 12.0,
+          nf_total_fat: 8.5,
+          nf_total_carbohydrate: 35.0,
+          nf_dietary_fiber: 4.2,
+          nf_sugars: 8.5,
+          nf_sodium: 450,
+          serving_unit: 'serving',
+          serving_qty: 1,
+          serving_weight_grams: 200,
+          brand_name: null,
+          nf_saturated_fat: null,
+          nf_cholesterol: null,
+          nf_potassium: null,
+          nf_p: null,
+        };
+        const healthData = getHealthData(genericData.food_name);
+        const carbs = genericData.nf_total_carbohydrate || 0;
+        const glycemicLoad = healthData.glycemicIndex ? calculateGlycemicLoad(healthData.glycemicIndex, carbs) : undefined;
+        
+        const healthImpact: HealthImpactData = {
+          glycemicIndex: healthData.glycemicIndex,
+          glycemicLoad: glycemicLoad,
+          inflammatoryScore: healthData.inflammatoryScore,
+          inflammatoryText: getInflammatoryText(healthData.inflammatoryScore),
+        };
+
+        const nutritionInfo: NutritionInfo = {
+          ...genericData,
+          healthData: healthImpact,
+        };
+
+        return NextResponse.json(nutritionInfo);
+      }
+      
+      return NextResponse.json({ error: `No mock data found for "${foodName}"` }, { status: 404 });
     }
 
     // If API key is present, proceed with USDA API call

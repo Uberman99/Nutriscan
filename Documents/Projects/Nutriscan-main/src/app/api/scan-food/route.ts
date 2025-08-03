@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs';
+import { currentUser } from '@clerk/nextjs/server';
 import { analyzeImageForFood } from '@/lib/api';
-import { getNutritionData } from '@/lib/api'; // Assume this wraps /api/nutrition
 
 export const runtime = 'edge';
 
+interface FoodResult {
+  name: string;
+  confidence: number;
+  source: string;
+}
+
 export async function POST(req: NextRequest) {
   // Enforce authentication
-  const { userId } = auth();
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  const user = await currentUser();
+  if (!user) {
+    return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 });
   }
 
   const formData = await req.formData();
@@ -19,7 +24,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Try Gemini AI first
-  let foodResults: { name: string; confidence: number; source: string }[] = [];
+  let foodResults: FoodResult[] = [];
   let geminiResponse: Response | null = null;
   try {
     const geminiFormData = new FormData();
@@ -31,10 +36,11 @@ export async function POST(req: NextRequest) {
     if (geminiResponse.ok) {
       const geminiData = await geminiResponse.json();
       if (Array.isArray(geminiData.foods) && geminiData.foods.length > 0) {
-        foodResults = geminiData.foods.map((f: any) => ({ ...f, source: 'gemini' }));
+        foodResults = geminiData.foods.map((f: FoodResult) => ({ ...f, source: 'gemini' }));
       }
     }
-  } catch (e) {
+  } catch (error) {
+    console.warn('Gemini AI fallback failed:', error);
     // Ignore Gemini errors, fallback below
   }
 
@@ -46,9 +52,11 @@ export async function POST(req: NextRequest) {
   // Filter for high-confidence results (e.g., >0.7)
   foodResults = foodResults.filter(f => typeof f.confidence === 'number' && f.confidence > 0.7);
 
-  // Remove non-food items using NON_FOOD_ITEMS set
-  const { NON_FOOD_ITEMS } = await import('@/lib/non-food-items');
-  foodResults = foodResults.filter(f => f.name && !NON_FOOD_ITEMS.has(f.name.trim().toLowerCase()));
+  // Remove non-food items using enhanced smart detection
+  const { filterFoodItems } = await import('@/lib/non-food-items');
+  const foodNames = foodResults.map(f => f.name).filter(Boolean);
+  const validFoodNames = filterFoodItems(foodNames);
+  foodResults = foodResults.filter(f => validFoodNames.includes(f.name));
 
   // Sort by confidence descending
   foodResults.sort((a, b) => (b.confidence || 0) - (a.confidence || 0));

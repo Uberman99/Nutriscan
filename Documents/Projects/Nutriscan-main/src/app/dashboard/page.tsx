@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useUser, SignInButton } from '@clerk/nextjs'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Calendar, PieChart, Utensils, TrendingUp, Activity, Coffee, Sun, Moon, Trash2 } from 'lucide-react'
@@ -18,11 +19,9 @@ interface DailySummary {
 }
 
 export default function Dashboard() {
+  // All hooks must be called at the top level
+  const { isSignedIn, isLoaded } = useUser();
   const [isClient, setIsClient] = useState(false);
-
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [meals, setMeals] = useState<MealLog[]>([]);
   const [summary, setSummary] = useState<DailySummary>({
@@ -37,11 +36,31 @@ export default function Dashboard() {
   const [isClearing, setIsClearing] = useState(false);
   const { toast, ToastContainer } = useToast();
 
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
   const fetchMeals = useCallback(async () => {
+    if (!isSignedIn || !isLoaded) {
+      return;
+    }
+    
     try {
       setLoading(true);
-      const response = await fetch(`/api/get-meals?date=${selectedDate}`);
+      console.log('🔍 Dashboard: Making API request for date:', selectedDate);
+      console.log('🔍 Dashboard: User signed in:', isSignedIn);
+      
+      const response = await fetch(`/api/get-meals?date=${selectedDate}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      console.log('🔍 Dashboard: API response status:', response.status);
       const data = await response.json();
+      console.log('🔍 Dashboard: API response data:', data);
 
       if (data.success) {
         setMeals(data.meals);
@@ -63,11 +82,13 @@ export default function Dashboard() {
     } finally {
       setLoading(false);
     }
-  }, [selectedDate, toast]);
+  }, [selectedDate, toast, isSignedIn, isLoaded]);
 
   useEffect(() => {
-    fetchMeals();
-  }, [selectedDate, fetchMeals]);
+    if (isSignedIn && isLoaded) {
+      fetchMeals();
+    }
+  }, [selectedDate, fetchMeals, isSignedIn, isLoaded]);
 
   const handleClearMeals = async () => {
     if (!selectedDate || meals.length === 0) return;
@@ -151,6 +172,35 @@ export default function Dashboard() {
     acc[meal.mealType].push(meal);
     return acc;
   }, {} as Record<string, MealLog[]>);
+
+  // Show loading spinner while Clerk is loading
+  if (!isLoaded || !isClient) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+          <span className="ml-3 text-gray-600">Loading...</span>
+        </div>
+      </div>
+    );
+  }
+  
+  // Show sign-in prompt if user is not authenticated
+  if (!isSignedIn) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">Welcome to NutriScan Dashboard</h1>
+          <p className="text-gray-600 mb-8">Please sign in to track your meals and nutrition data.</p>
+          <SignInButton mode="modal">
+            <Button className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 text-lg">
+              Sign In to Continue
+            </Button>
+          </SignInButton>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-green-50 to-purple-50 p-6">

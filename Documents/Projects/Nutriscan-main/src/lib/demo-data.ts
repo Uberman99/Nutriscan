@@ -4,8 +4,8 @@ export const mockFoodRecognition = [
   'Apple - Red Delicious', 'Apple - Granny Smith', 'Apple - Gala', 'Apple - Honeycrisp',
   'Banana - Cavendish', 'Orange - Valencia', 'Orange - Blood Orange', 'Bread - White', 'Bread - Whole Wheat', 
   'Salad - Caesar', 'Salad - Greek', 'Cake - Vanilla', 'Cake - Chocolate', 'Pizza - Margherita', 'Pizza - Pepperoni',
-  'Samosa - Vegetable', 'Samosa - Meat', 'Biryani - Chicken', 'Biryani - Vegetable', 'Panipuri', 'Rasmalai', 
-  'Dosa - Plain', 'Dosa - Masala', 'Burger - Beef', 'Burger - Chicken', 'Cookies - Chocolate Chip', 'Cookies - Oatmeal'
+  'Sandwich - Turkey', 'Sandwich - Ham', 'Pasta - Spaghetti', 'Pasta - Penne', 'Ice Cream - Vanilla', 'Ice Cream - Chocolate', 
+  'Wrap - Chicken', 'Wrap - Vegetarian', 'Burger - Beef', 'Burger - Chicken', 'Cookies - Chocolate Chip', 'Cookies - Oatmeal'
 ]
 
 export const mockAIAnalysis = {
@@ -187,62 +187,62 @@ export const mockNutritionData = {
     ],
     dataSource: 'USDA'
   },
-  'Samosa': {
-    foodName: 'Samosa (Indian fried pastry)',
+  'Sandwich': {
+    foodName: 'Sandwich - Turkey and cheese',
     fdcId: 173897,
-    calories: 308,
+    calories: 285,
     macronutrients: [
-      { name: 'Protein', amount: 6.2, unit: 'g' },
-      { name: 'Total lipid (fat)', amount: 17.8, unit: 'g' },
-      { name: 'Carbohydrate, by difference', amount: 32.4, unit: 'g' },
-      { name: 'Fiber, total dietary', amount: 3.1, unit: 'g' },
-      { name: 'Sugars, total including NLEA', amount: 2.8, unit: 'g' },
+      { name: 'Protein', amount: 18.2, unit: 'g' },
+      { name: 'Total lipid (fat)', amount: 12.8, unit: 'g' },
+      { name: 'Carbohydrate, by difference', amount: 25.4, unit: 'g' },
+      { name: 'Fiber, total dietary', amount: 2.8, unit: 'g' },
+      { name: 'Sugars, total including NLEA', amount: 3.2, unit: 'g' },
     ],
     micronutrients: [
-      { name: 'Sodium, Na', amount: 485, unit: 'mg' },
-      { name: 'Vitamin C, total ascorbic acid', amount: 5.2, unit: 'mg' },
-      { name: 'Calcium, Ca', amount: 45, unit: 'mg' },
-      { name: 'Iron, Fe', amount: 2.1, unit: 'mg' }
+      { name: 'Sodium, Na', amount: 685, unit: 'mg' },
+      { name: 'Vitamin C, total ascorbic acid', amount: 2.5, unit: 'mg' },
+      { name: 'Calcium, Ca', amount: 165, unit: 'mg' },
+      { name: 'Iron, Fe', amount: 2.8, unit: 'mg' }
     ],
-    dataSource: 'Indian Food Database'
+    dataSource: 'USDA'
   },
-  'Rasmalai': {
-    foodName: 'Rasmalai (Indian milk dessert)',
+  'Ice Cream': {
+    foodName: 'Ice cream - Vanilla',
     fdcId: 173898,
-    calories: 267,
+    calories: 207,
     macronutrients: [
-      { name: 'Protein', amount: 8.5, unit: 'g' },
-      { name: 'Total lipid (fat)', amount: 12.3, unit: 'g' },
-      { name: 'Carbohydrate, by difference', amount: 32.1, unit: 'g' },
-      { name: 'Fiber', amount: 0.2, unit: 'g' },
-      { name: 'Sugars, total including NLEA', amount: 29.8, unit: 'g' },
+      { name: 'Protein', amount: 3.5, unit: 'g' },
+      { name: 'Total lipid (fat)', amount: 11.0, unit: 'g' },
+      { name: 'Carbohydrate, by difference', amount: 23.6, unit: 'g' },
+      { name: 'Fiber', amount: 0.7, unit: 'g' },
+      { name: 'Sugars, total including NLEA', amount: 21.2, unit: 'g' },
     ],
     micronutrients: [
-      { name: 'Sodium, Na', amount: 125, unit: 'mg' },
-      { name: 'Vitamin C, total ascorbic acid', amount: 1.5, unit: 'mg' },
-      { name: 'Calcium, Ca', amount: 185, unit: 'mg' },
-      { name: 'Iron, Fe', amount: 0.8, unit: 'mg' }
+      { name: 'Sodium, Na', amount: 80, unit: 'mg' },
+      { name: 'Vitamin C, total ascorbic acid', amount: 0.6, unit: 'mg' },
+      { name: 'Calcium, Ca', amount: 128, unit: 'mg' },
+      { name: 'Iron, Fe', amount: 0.2, unit: 'mg' }
     ],
-    dataSource: 'Indian Food Database'
+    dataSource: 'USDA'
   },
-  'Panipuri': {
-    foodName: 'Panipuri (Indian street food)',
+  'Wrap': {
+    foodName: 'Wrap - Chicken Caesar',
     fdcId: 173899,
-    calories: 329,
+    calories: 315,
     macronutrients: [
-      { name: 'Protein', amount: 8.7, unit: 'g' },
-      { name: 'Total lipid (fat)', amount: 12.5, unit: 'g' },
-      { name: 'Carbohydrate, by difference', amount: 48.2, unit: 'g' },
-      { name: 'Fiber, total dietary', amount: 6.8, unit: 'g' },
-      { name: 'Sugars, total including NLEA', amount: 8.5, unit: 'g' },
+      { name: 'Protein', amount: 22.7, unit: 'g' },
+      { name: 'Total lipid (fat)', amount: 15.5, unit: 'g' },
+      { name: 'Carbohydrate, by difference', amount: 22.2, unit: 'g' },
+      { name: 'Fiber, total dietary', amount: 3.8, unit: 'g' },
+      { name: 'Sugars, total including NLEA', amount: 2.5, unit: 'g' },
     ],
     micronutrients: [
-      { name: 'Sodium, Na', amount: 892, unit: 'mg' },
-      { name: 'Vitamin C, total ascorbic acid', amount: 12.3, unit: 'mg' },
-      { name: 'Calcium, Ca', amount: 58, unit: 'mg' },
-      { name: 'Iron, Fe', amount: 3.2, unit: 'mg' }
+      { name: 'Sodium, Na', amount: 720, unit: 'mg' },
+      { name: 'Vitamin C, total ascorbic acid', amount: 8.3, unit: 'mg' },
+      { name: 'Calcium, Ca', amount: 85, unit: 'mg' },
+      { name: 'Iron, Fe', amount: 2.2, unit: 'mg' }
     ],
-    dataSource: 'Indian Food Database'
+    dataSource: 'USDA'
   },
   'Pizza': {
     foodName: 'Pizza, cheese',

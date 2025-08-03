@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { deleteMealLogsByDate } from '@/lib/database'
-import { auth } from '@clerk/nextjs/server'
+import { currentUser } from '@clerk/nextjs/server'
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    const user = await currentUser();
     
-    // Enforce authentication (must be present)
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 });
     }
-    const effectiveUserId = userId;
+    
+    const effectiveUserId = user.id;
 
     const { date } = await req.json();
     if (!date || typeof date !== 'string') {

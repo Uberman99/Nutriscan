@@ -18,7 +18,9 @@ const basePrices: { [key: string]: number } = {
   'beef': 18.50,
   'eggs': 5.00,
   'pizza': 7.00,
-  'samosa': 2.00,
+  'sandwich': 8.50,
+  'ice cream': 6.00,
+  'wrap': 9.00,
   'cake': 20.00,
   'default': 5.00
 };

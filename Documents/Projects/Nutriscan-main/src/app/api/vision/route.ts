@@ -3,7 +3,6 @@ import { vision } from '@/lib/vision-client';
 import { mockFoodRecognition } from '@/lib/demo-data';
 
 export async function POST(request: NextRequest) {
-  return NextResponse.json({ error: 'This endpoint is deprecated. Use /api/scan-food instead.' }, { status: 410 });
   try {
     const { image } = await request.json();
     
@@ -13,7 +12,7 @@ export async function POST(request: NextRequest) {
 
     // If no Vision client is available, use mock data
     if (!vision.client) {
-      console.log('Using mock data for Vision API');
+      console.log('Using mock data for AI Vision');
       return NextResponse.json({ 
         labels: mockFoodRecognition,
         success: true 
@@ -50,7 +49,7 @@ export async function POST(request: NextRequest) {
       filteredObjects
     });
   } catch (error) {
-    console.error('Vision API Error:', error);
+    console.error('AI Vision Error:', error);
     return NextResponse.json(
       { error: 'Failed to analyze image' }, 
       { status: 500 }

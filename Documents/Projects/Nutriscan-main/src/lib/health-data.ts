@@ -79,7 +79,7 @@ export const healthDataDb: { [key: string]: HealthData } = {
   'pizza': { glycemicIndex: 80, inflammatoryScore: 1 },
   'soda': { glycemicIndex: 63, inflammatoryScore: 1 },
   'french fries': { glycemicIndex: 75, inflammatoryScore: 1 },
-  'samosa': { glycemicIndex: 60, inflammatoryScore: 1 },
+  'sandwich': { glycemicIndex: 55, inflammatoryScore: 0 },
   'cookie': { glycemicIndex: 64, inflammatoryScore: 1 },
   'ice cream': { glycemicIndex: 57, inflammatoryScore: 1 },
   'chocolate': { glycemicIndex: 45, inflammatoryScore: 0 },
