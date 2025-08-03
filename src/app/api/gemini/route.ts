@@ -102,7 +102,7 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
       }
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.error('[Edge Runtime] Gemini API request timed out');
         return NextResponse.json({
           description: 'Request timed out',

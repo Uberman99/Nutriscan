@@ -66,8 +66,9 @@ export async function POST(request: Request) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
     
+    let geminiResponse;
     try {
-      const geminiResponse = await fetch(
+      geminiResponse = await fetch(
         `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
         {
           method: 'POST',
@@ -117,7 +118,7 @@ Example response format:
       }
     } catch (error) {
       clearTimeout(timeoutId);
-      if (error.name === 'AbortError') {
+      if (error instanceof Error && error.name === 'AbortError') {
         console.error('[Edge Runtime] ❌ Gemini API request timed out');
         return NextResponse.json({
           error: 'Request timeout',
