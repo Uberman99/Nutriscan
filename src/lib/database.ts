@@ -66,23 +66,20 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
   const dbSql = await getDBConnection();
   
   if (!dbSql) {
-    console.log('💾 Using mock data for meal log (development mode)');
-    return {
-      id: Date.now().toString(),
-      userId,
-      date,
-      mealType,
-      foods,
-      createdAt: new Date(),
-    };
+    // In a real production scenario, we should not fall back to mock data.
+    // Throw an error so the calling API route knows the database is unavailable.
+    console.error('[DB] No database connection. Cannot save meal log.');
+    throw new Error('Database connection is unavailable.');
   }
 
   try {
+    console.log(`[DB] Attempting to save meal log for user: ${userId}`);
     const result = await dbSql`
       INSERT INTO meal_logs (user_id, date, meal_type, foods)
       VALUES (${userId}, ${date}, ${mealType}, ${JSON.stringify(foods)})
       RETURNING id, user_id, date, meal_type, foods, created_at;
     `;
+    console.log(`[DB] Successfully saved meal log with id: ${result.rows[0].id}`);
     
     interface DatabaseRow {
       id: string;
@@ -104,36 +101,27 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
       createdAt: new Date(row.created_at)
     };
   } catch (error) {
-    console.warn('📊 Postgres connection failed, using mock data for development:', error);
-    return {
-      id: Date.now().toString(),
-      userId,
-      date,
-      mealType,
-      foods,
-      createdAt: new Date(),
-    };
+    console.error('[DB] Error in saveMealLog:', error);
+    // Re-throw the error to be handled by the calling API route
+    throw error;
   }
 }
 
 export async function getMealLogsByDate(userId: string, date: string): Promise<MealLog[]> {
-  console.log(`[DB] Attempting to get meal logs for user: ${userId} on date: ${date}`);
   const dbSql = await getDBConnection();
   
   if (!dbSql) {
-    console.log('[DB] No database connection. Returning mock data (empty array).');
+    console.log('[DB] No database connection. Returning empty array.');
     return [];
   }
 
   try {
-    console.log('[DB] Executing query to get meal logs.');
     const result = await dbSql`
       SELECT id, user_id, date, meal_type, foods, created_at
       FROM meal_logs
       WHERE user_id = ${userId} AND date = ${date}
       ORDER BY created_at ASC;
     `;
-    console.log(`[DB] Found ${result.rows.length} meal logs.`);
 
     interface DatabaseRow {
       id: string;
