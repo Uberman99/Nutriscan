@@ -1,5 +1,5 @@
-// Use Edge Runtime for better performance and faster execution
-export const runtime = "edge";
+// Temporarily switch back to Node.js runtime for debugging
+// export const runtime = "edge";
 
 import { NextResponse } from 'next/server';
 

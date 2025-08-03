@@ -1,5 +1,6 @@
 
-export const runtime = 'edge'; // Use Edge Runtime for better performance
+// Temporarily switch back to Node.js runtime for debugging
+// export const runtime = 'edge'; // Use Edge Runtime for better performance
 
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -46,14 +47,18 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid food items after filtering' }, { status: 400 });
     }
 
-    console.log('[Edge Runtime] Checking GEMINI_API_KEY...');
+    console.log('[Node Runtime] Checking GEMINI_API_KEY...');
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
+    console.log('[Node Runtime] Environment check - NODE_ENV:', process.env.NODE_ENV);
+    console.log('[Node Runtime] Environment check - VERCEL:', process.env.VERCEL);
+    console.log('[Node Runtime] All env keys containing GEMINI:', Object.keys(process.env).filter(key => key.toLowerCase().includes('gemini')));
+    
     if (!GEMINI_API_KEY) {
-      console.error('[Edge Runtime] CRITICAL: Gemini API key is missing or not accessible in this environment.');
-      console.error('[Edge Runtime] Available env vars:', Object.keys(process.env).filter(key => key.includes('GEMINI')));
+      console.error('[Node Runtime] CRITICAL: Gemini API key is missing or not accessible in this environment.');
+      console.error('[Node Runtime] Available env vars:', Object.keys(process.env).filter(key => key.includes('GEMINI')));
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
-    console.log('[Edge Runtime] GEMINI_API_KEY found, length:', GEMINI_API_KEY.length);
+    console.log('[Node Runtime] GEMINI_API_KEY found, length:', GEMINI_API_KEY.length);
 
     // Gemini API endpoint for text generation using the latest model
     const geminiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY;
