@@ -38,10 +38,17 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Convert image to base64 for Gemini API
+    // Convert image to base64 for Gemini API - Edge Runtime compatible
     const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = new Uint8Array(arrayBuffer);
-    const base64Image = btoa(String.fromCharCode(...buffer));
+    const bytes = new Uint8Array(arrayBuffer);
+    
+    // Convert to base64 in chunks to avoid memory issues
+    let base64Image = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      const chunk = bytes.slice(i, i + chunkSize);
+      base64Image += btoa(String.fromCharCode(...chunk));
+    }
 
     console.log('[Edge Runtime] ✅ Image received. Starting Gemini Vision analysis...');
 
@@ -56,19 +63,24 @@ export async function POST(request: Request) {
     }
 
     console.log('[Edge Runtime] 🔄 Making request to Gemini API...');
-    const geminiResponse = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: `Analyze this food image and identify ALL food items visible. For each food item, provide:
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+    
+    try {
+      const geminiResponse = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [
+              {
+                parts: [
+                  {
+                    text: `Analyze this food image and identify ALL food items visible. For each food item, provide:
 1. The specific name of the food (be precise - e.g., "almond cake", "chocolate muffin", "apple pie" rather than just "cake" or "dessert")
 2. A confidence score from 0.0 to 1.0
 3. Any visible ingredients or toppings
@@ -80,26 +92,39 @@ Example response format:
   {"name": "Almond Cake", "confidence": 0.95, "ingredients": ["almonds", "flour", "sugar"]},
   {"name": "Chocolate Chip Cookie", "confidence": 0.88, "ingredients": ["chocolate chips", "flour", "butter"]}
 ]`
-                },
-                {
-                  inline_data: {
-                    mime_type: 'image/jpeg',
-                    data: base64Image
+                  },
+                  {
+                    inline_data: {
+                      mime_type: 'image/jpeg',
+                      data: base64Image
+                    }
                   }
-                }
-              ]
-            }
-          ]
-        })
+                ]
+              }
+            ]
+          })
+        }
+      );
+      
+      clearTimeout(timeoutId);
+      
+      if (!geminiResponse.ok) {
+        console.error('[Edge Runtime] ❌ Gemini API request failed:', geminiResponse.status, geminiResponse.statusText);
+        return NextResponse.json({
+          error: 'Gemini API request failed',
+          foods: [{ name: 'Food Item', confidence: 0.5, source: 'API Error Fallback' }]
+        }, { status: 500 });
       }
-    );
-
-    if (!geminiResponse.ok) {
-      console.error('[Edge Runtime] ❌ Gemini API request failed:', geminiResponse.status, geminiResponse.statusText);
-      return NextResponse.json({
-        error: 'Gemini API request failed',
-        foods: [{ name: 'Food Item', confidence: 0.5, source: 'API Error Fallback' }]
-      }, { status: 500 });
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('[Edge Runtime] ❌ Gemini API request timed out');
+        return NextResponse.json({
+          error: 'Request timeout',
+          foods: [{ name: 'Food Item', confidence: 0.5, source: 'Timeout Fallback' }]
+        }, { status: 408 });
+      }
+      throw error;
     }
 
     const geminiData = await geminiResponse.json();
