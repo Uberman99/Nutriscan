@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { initializeDatabase } from '@/lib/database';
 
-export async function POST() {
+export async function GET() {
   try {
     console.log('Initializing database...');
     const result = await initializeDatabase();
