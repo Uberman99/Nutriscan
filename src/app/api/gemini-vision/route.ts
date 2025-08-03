@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     console.log('[Edge Runtime] 🔄 Making request to Gemini API...');
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // Increased to 30 second timeout
     
     let geminiResponse;
     try {

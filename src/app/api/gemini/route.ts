@@ -77,7 +77,7 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
 
     console.log('[Edge Runtime] Making request to Gemini API...');
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 20000); // Increased to 20 second timeout
 
     let response;
     try {
