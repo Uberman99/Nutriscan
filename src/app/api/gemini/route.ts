@@ -1,4 +1,6 @@
 
+export const runtime = 'edge'; // Use Edge Runtime for better performance
+
 import { NextRequest, NextResponse } from 'next/server';
 
 // Type for Gemini API response
@@ -22,10 +24,11 @@ type GeminiParsed = {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('[Edge Runtime] /api/gemini endpoint called');
 
     let { foodItems } = await request.json();
 
-    console.log('Free AI API called with foodItems:', foodItems);
+    console.log('[Edge Runtime] Free AI API called with foodItems:', foodItems);
 
     // Basic filtering: remove empty, whitespace, duplicates, and obviously invalid entries
     if (!foodItems || !Array.isArray(foodItems)) {
@@ -43,12 +46,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid food items after filtering' }, { status: 400 });
     }
 
-
+    console.log('[Edge Runtime] Checking GEMINI_API_KEY...');
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
-      console.error('[Vercel Server] Gemini API key is missing or not accessible in this environment.');
+      console.error('[Edge Runtime] CRITICAL: Gemini API key is missing or not accessible in this environment.');
+      console.error('[Edge Runtime] Available env vars:', Object.keys(process.env).filter(key => key.includes('GEMINI')));
       return NextResponse.json({ error: 'Gemini API key not configured' }, { status: 500 });
     }
+    console.log('[Edge Runtime] GEMINI_API_KEY found, length:', GEMINI_API_KEY.length);
 
     // Gemini API endpoint for text generation using the latest model
     const geminiEndpoint = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY;
@@ -70,24 +75,45 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
       contents: [{ parts: [{ text: prompt }] }]
     };
 
-    const response = await fetch(geminiEndpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(geminiBody),
-    });
+    console.log('[Edge Runtime] Making request to Gemini API...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Gemini API Error:', errorText);
-      return NextResponse.json({
-        description: 'Food analysis failed',
-        healthScore: 50,
-        suggestions: ['Try again later', 'Ensure valid input', 'Check API status'],
-        geminiError: errorText
-      }, { status: 500 });
+    let response;
+    try {
+      response = await fetch(geminiEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(geminiBody),
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[Edge Runtime] Gemini API Error:', response.status, errorText);
+        return NextResponse.json({
+          description: 'Food analysis failed',
+          healthScore: 50,
+          suggestions: ['Try again later', 'Ensure valid input', 'Check API status'],
+          geminiError: errorText
+        }, { status: 500 });
+      }
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error.name === 'AbortError') {
+        console.error('[Edge Runtime] Gemini API request timed out');
+        return NextResponse.json({
+          description: 'Request timed out',
+          healthScore: 50,
+          suggestions: ['Try again later', 'Network connection may be slow']
+        }, { status: 408 });
+      }
+      throw error;
     }
 
-
+    console.log('[Edge Runtime] Gemini API request successful, parsing response...');
     const result: GeminiResponse = await response.json();
     // Gemini returns candidates[0].content.parts[0].text
     let text = result.candidates?.[0]?.content?.parts?.[0]?.text || '';
