@@ -20,7 +20,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Missing mealType or foods' }, { status: 400 });
     }
 
-    const todayDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    // Use consistent date format to avoid timezone issues
+    const getTodayDate = () => {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+    
+    const todayDate = getTodayDate();
     console.log('📅 Logging meal with date:', todayDate);
     
     const mealLog = await saveMealLog({
