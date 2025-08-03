@@ -117,20 +117,23 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
 }
 
 export async function getMealLogsByDate(userId: string, date: string): Promise<MealLog[]> {
+  console.log(`[DB] Attempting to get meal logs for user: ${userId} on date: ${date}`);
   const dbSql = await getDBConnection();
   
   if (!dbSql) {
-    console.log('💾 Using mock data for meal logs (development mode)');
+    console.log('[DB] No database connection. Returning mock data (empty array).');
     return [];
   }
 
   try {
+    console.log('[DB] Executing query to get meal logs.');
     const result = await dbSql`
       SELECT id, user_id, date, meal_type, foods, created_at
       FROM meal_logs
       WHERE user_id = ${userId} AND date = ${date}
       ORDER BY created_at ASC;
     `;
+    console.log(`[DB] Found ${result.rows.length} meal logs.`);
 
     interface DatabaseRow {
       id: string;
@@ -150,6 +153,7 @@ export async function getMealLogsByDate(userId: string, date: string): Promise<M
       createdAt: new Date((row as DatabaseRow).created_at)
     }));
   } catch (error) {
+    console.error('[DB] Error in getMealLogsByDate:', error);
     console.warn('📊 Postgres connection failed, returning empty array for development:', error);
     return [];
   }
