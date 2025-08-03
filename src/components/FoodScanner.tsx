@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import Image from 'next/image'
 import imageCompression from 'browser-image-compression';
-import { Camera, Upload, AlertCircle } from 'lucide-react'
+import { Camera, Upload, AlertCircle, Plus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -47,6 +47,43 @@ export default function FoodScanner() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
+
+  // Function to log detected foods without nutrition data
+  const logDetectedFoods = async (mealType: string) => {
+    if (!results?.foodItems.length) return;
+    
+    try {
+      const response = await fetch('/api/log-meal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mealType,
+          foods: results.foodItems.map(item => ({
+            name: item.name,
+            calories: 100, // Default fallback calories
+            protein: 5,    // Default fallback values
+            carbs: 15,
+            fat: 3,
+            fiber: 2,
+            confidence: item.confidence,
+            source: item.source
+          }))
+        })
+      });
+
+      if (response.ok) {
+        alert(`✅ Meal logged successfully as ${mealType}!`);
+      } else {
+        console.error('Failed to log meal');
+        alert('❌ Failed to log meal. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error logging meal:', error);
+      alert('❌ Error logging meal. Please try again.');
+    }
+  };
 
   useEffect(() => {
     setIsClient(true)
@@ -320,6 +357,38 @@ export default function FoodScanner() {
           </div>
           {results.nutritionData.length > 0 ? (
             <NutritionResults results={results} onClear={handleScanAnother} />
+          ) : results.foodItems.length > 0 ? (
+            <div>
+              <p className="text-amber-600 text-center mb-6">
+                Food detected: {results.foodItems.map(item => item.name).join(', ')}. 
+                Nutrition data unavailable, but you can still log this meal.
+              </p>
+              {/* Simple meal logging section when nutrition data is missing */}
+              <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl border border-blue-200">
+                <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-blue-500" />
+                  Log This Meal
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {[
+                    { type: 'breakfast', icon: '🌅', label: 'Breakfast' },
+                    { type: 'lunch', icon: '☀️', label: 'Lunch' },
+                    { type: 'dinner', icon: '🌙', label: 'Dinner' },
+                    { type: 'snack', icon: '🍎', label: 'Snack' }
+                  ].map(({ type, icon, label }) => (
+                    <Button
+                      key={type}
+                      onClick={() => logDetectedFoods(type)}
+                      className="flex flex-col items-center gap-2 p-4 h-auto bg-white hover:bg-blue-50 border-2 border-blue-200 hover:border-blue-300 text-slate-700 hover:text-blue-700 rounded-xl transition-all duration-200 shadow-sm hover:shadow-md"
+                      variant="outline"
+                    >
+                      <span className="text-2xl">{icon}</span>
+                      <span className="font-medium text-sm">{label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
           ) : (
             <p className="text-red-500 text-center">No nutrition data available. Please try again with a different image.</p>
           )}
