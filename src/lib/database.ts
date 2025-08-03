@@ -108,6 +108,8 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
 }
 
 export async function getMealLogsByDate(userId: string, date: string): Promise<MealLog[]> {
+  console.log(`[DB] getMealLogsByDate called with userId: ${userId}, date: ${date}`);
+  
   const dbSql = await getDBConnection();
   
   if (!dbSql) {
@@ -116,12 +118,16 @@ export async function getMealLogsByDate(userId: string, date: string): Promise<M
   }
 
   try {
+    console.log(`[DB] Executing query for user ${userId} on date ${date}`);
     const result = await dbSql`
       SELECT id, user_id, date, meal_type, foods, created_at
       FROM meal_logs
       WHERE user_id = ${userId} AND date = ${date}
       ORDER BY created_at ASC;
     `;
+
+    console.log(`[DB] Query result: ${result.rows.length} rows found`);
+    console.log(`[DB] Raw query result:`, result.rows);
 
     interface DatabaseRow {
       id: string;
@@ -132,7 +138,7 @@ export async function getMealLogsByDate(userId: string, date: string): Promise<M
       created_at: string;
     }
 
-    return result.rows.map((row) => ({
+    const meals = result.rows.map((row) => ({
       id: (row as DatabaseRow).id,
       userId: (row as DatabaseRow).user_id,
       date: new Date((row as DatabaseRow).date).toISOString().split('T')[0],
@@ -140,6 +146,9 @@ export async function getMealLogsByDate(userId: string, date: string): Promise<M
       foods: (row as DatabaseRow).foods,
       createdAt: new Date((row as DatabaseRow).created_at)
     }));
+
+    console.log(`[DB] Mapped meals:`, meals);
+    return meals;
   } catch (error) {
     console.error('[DB] Error in getMealLogsByDate:', error);
     console.warn('📊 Postgres connection failed, returning empty array for development:', error);
