@@ -1,8 +1,7 @@
-// Force Node.js runtime to avoid Edge Runtime incompatibility
-export const runtime = "nodejs";
+// Use Edge Runtime for better performance and faster execution
+export const runtime = "edge";
 
 import { NextResponse } from 'next/server';
-import { foodShowcaseData } from '@/lib/food-data';
 
 // Type definition for Gemini Vision API response
 interface GeminiFoodItem {
@@ -11,55 +10,17 @@ interface GeminiFoodItem {
   ingredients?: string[];
 }
 
-// Helper function to extract text from an image using Tesseract.js with proper configuration
-async function extractTextFromImage(imageBuffer: Buffer): Promise<string> {
-  try {
-    // Import Tesseract dynamically to avoid worker issues
-    const Tesseract = await import('tesseract.js');
-    
-    // Use the simplified API that works with Next.js
-    const { data: { text } } = await Tesseract.recognize(imageBuffer, 'eng', {
-      logger: m => console.log('🔍 OCR Progress:', m)
-    });
-    
-    return text || '';
-  } catch (error) {
-    console.error('Tesseract OCR error:', error);
-    // Return empty string as fallback
-    return '';
-  }
-}
-
-// Fuzzy match extracted text to known foods
-function matchFoods(text: string): Array<{ name: string; confidence: number; source: string }> {
-  const lowerText = text.toLowerCase();
-  const matches: Array<{ name: string; confidence: number; source: string }> = [];
-  for (const food of foodShowcaseData) {
-    const foodName = food.name.replace(/^[^a-zA-Z]+/, '').toLowerCase();
-    if (lowerText.includes(foodName)) {
-      matches.push({ name: foodName, confidence: 0.99, source: 'OCR' });
-    } else if (foodName.split(' ').some(word => lowerText.includes(word))) {
-      matches.push({ name: foodName, confidence: 0.7, source: 'OCR' });
-    }
-  }
-  // If no matches, return a generic guess
-  if (matches.length === 0 && lowerText.trim().length > 0) {
-    matches.push({ name: lowerText.split(/\s+/)[0], confidence: 0.5, source: 'OCR' });
-  }
-  return matches;
-}
-
 
 export async function POST(request: Request) {
   try {
-    console.log('🚀 Received request for Gemini Vision AI analysis');
+    console.log('[Edge Runtime] 🚀 Received request for Gemini Vision AI analysis');
     
     // Check content type
     const contentType = request.headers.get('content-type');
-    console.log('📋 Request content-type:', contentType);
+    console.log('[Edge Runtime] 📋 Request content-type:', contentType);
     
     if (!contentType || !contentType.includes('multipart/form-data')) {
-      console.error('❌ Invalid content type. Expected multipart/form-data, got:', contentType);
+      console.error('[Edge Runtime] ❌ Invalid content type. Expected multipart/form-data, got:', contentType);
       return NextResponse.json({ 
         error: 'Invalid content type. Expected multipart/form-data',
         foods: [{ name: 'Food Item', confidence: 0.5, source: 'Gemini Vision' }]
@@ -70,7 +31,7 @@ export async function POST(request: Request) {
     const imageFile = formData.get('image');
 
     if (!imageFile || typeof imageFile === 'string') {
-      console.error('❌ Missing image in the request');
+      console.error('[Edge Runtime] ❌ Missing image in the request');
       return NextResponse.json({ 
         error: 'Missing image',
         foods: [{ name: 'Food Item', confidence: 0.5, source: 'Gemini Vision' }]
@@ -79,20 +40,22 @@ export async function POST(request: Request) {
 
     // Convert image to base64 for Gemini API
     const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Image = buffer.toString('base64');
+    const buffer = new Uint8Array(arrayBuffer);
+    const base64Image = btoa(String.fromCharCode(...buffer));
 
-    console.log('✅ Image received. Starting Gemini Vision analysis...');
+    console.log('[Edge Runtime] ✅ Image received. Starting Gemini Vision analysis...');
 
     // Call Gemini Vision API for food recognition
     const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
     if (!GEMINI_API_KEY) {
-      console.error('❌ Missing Gemini API key');
+      console.error('[Edge Runtime] ❌ Missing Gemini API key');
       return NextResponse.json({
+        error: 'Server configuration error',
         foods: [{ name: 'Food Item', confidence: 0.5, source: 'Gemini Vision' }]
-      });
+      }, { status: 500 });
     }
 
+    console.log('[Edge Runtime] 🔄 Making request to Gemini API...');
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`,
       {
@@ -132,24 +95,21 @@ Example response format:
     );
 
     if (!geminiResponse.ok) {
-      console.error('❌ Gemini API request failed:', geminiResponse.statusText);
-      // Fallback to OCR analysis
-      const extractedText = await extractTextFromImage(buffer);
-      const foodItems = matchFoods(extractedText);
-      
+      console.error('[Edge Runtime] ❌ Gemini API request failed:', geminiResponse.status, geminiResponse.statusText);
       return NextResponse.json({
-        foods: foodItems.length > 0 ? foodItems : [{ name: 'Food Item', confidence: 0.5, source: 'OCR Fallback' }]
-      });
+        error: 'Gemini API request failed',
+        foods: [{ name: 'Food Item', confidence: 0.5, source: 'API Error Fallback' }]
+      }, { status: 500 });
     }
 
     const geminiData = await geminiResponse.json();
-    console.log('✅ Gemini Vision response received');
+    console.log('[Edge Runtime] ✅ Gemini Vision response received');
 
     // Parse Gemini response
     let detectedFoods = [];
     try {
       const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      console.log('🤖 Gemini raw response:', responseText);
+      console.log('[Edge Runtime] 🤖 Gemini raw response:', responseText);
       
       // Clean up the response to extract JSON
       const jsonMatch = responseText.match(/\[[\s\S]*\]/);
@@ -163,25 +123,23 @@ Example response format:
         }));
       }
     } catch (error) {
-      console.error('❌ Error parsing Gemini response:', error);
+      console.error('[Edge Runtime] ❌ Error parsing Gemini response:', error);
     }
 
-    // If Gemini didn't detect anything specific, try OCR as backup
+    // If Gemini didn't detect anything specific, provide a fallback
     if (detectedFoods.length === 0) {
-      console.log('🔄 No foods detected by Gemini, trying OCR fallback...');
-      const extractedText = await extractTextFromImage(buffer);
-      const ocrFoods = matchFoods(extractedText);
-      detectedFoods = ocrFoods.length > 0 ? ocrFoods : [{ name: 'Food Item', confidence: 0.4, source: 'Fallback' }];
+      console.log('[Edge Runtime] 🔄 No foods detected by Gemini, using fallback...');
+      detectedFoods = [{ name: 'Food Item', confidence: 0.4, source: 'Fallback', ingredients: [] }];
     }
 
-    console.log('✅ Final detected foods:', detectedFoods);
+    console.log('[Edge Runtime] ✅ Final detected foods:', detectedFoods);
 
     return NextResponse.json({
       foods: detectedFoods
     });
 
   } catch (error) {
-    console.error('🚨 Error in Gemini Vision analysis:', error);
+    console.error('[Edge Runtime] 🚨 Error in Gemini Vision analysis:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';
     return NextResponse.json({ 
       error: 'Failed to analyze image with Gemini Vision', 
