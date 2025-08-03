@@ -363,6 +363,9 @@ export default function FoodScanner() {
                 Food detected: {results.foodItems.map(item => item.name).join(', ')}. 
                 Nutrition data unavailable, but you can still log this meal.
               </p>
+              <div className="text-xs text-gray-500 text-center mb-4">
+                Debug: nutritionData.length = {results.nutritionData.length}, foodItems.length = {results.foodItems.length}
+              </div>
               {/* Simple meal logging section when nutrition data is missing */}
               <div className="mt-8 p-6 bg-gradient-to-r from-blue-50 to-green-50 rounded-2xl border border-blue-200">
                 <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
