@@ -82,6 +82,8 @@ export default function Dashboard() {
       const validDate = date && date.trim() !== '' ? date : new Date().toISOString().split('T')[0];
       
       setLoading(true);
+      console.log(`[Dashboard] 🔐 Authentication status:`, { isLoaded, isSignedIn });
+      
       try {
         const todayForComparison = new Date().toISOString().split('T')[0];
         console.log(`[Dashboard] 📅 Today's date: ${todayForComparison}`);
@@ -117,7 +119,7 @@ export default function Dashboard() {
         setLoading(false);
       }
     },
-    [toast, calculateSummary],
+    [toast, calculateSummary, isLoaded, isSignedIn],
   );
 
   useEffect(() => {

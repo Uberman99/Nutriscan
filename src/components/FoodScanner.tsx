@@ -52,6 +52,8 @@ export default function FoodScanner() {
 
   // Function to log detected foods without nutrition data
   const logDetectedFoods = async (mealType: string) => {
+    console.log('🔐 Authentication status check:', { isLoaded, isSignedIn });
+    
     if (!results?.foodItems.length) {
       alert('❌ No food items detected to log. Please scan a food item first.');
       return;
@@ -59,15 +61,18 @@ export default function FoodScanner() {
     
     // Check authentication status
     if (!isLoaded) {
+      console.log('⏳ Authentication not loaded yet');
       alert('🔄 Please wait while we verify your authentication status...');
       return;
     }
     
     if (!isSignedIn) {
+      console.log('🔒 User not signed in');
       alert('🔒 Please sign in to log your meals. You can sign in from the navigation menu.');
       return;
     }
     
+    console.log('✅ User is authenticated, proceeding with meal logging');
     console.log('🍽️ Starting meal log process...', { mealType, foodItems: results.foodItems });
     
     try {
