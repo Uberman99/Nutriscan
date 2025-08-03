@@ -1,30 +1,33 @@
 // src/app/api/log-meal/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { saveMealLog } from '@/lib/database';
+import { currentUser } from '@clerk/nextjs/server';
 
 export async function POST(request: NextRequest) {
   try {
+    // Enforce authentication
+    const user = await currentUser();
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized - Please sign in' }, { status: 401 });
+    }
+
     const { mealType, foods } = await request.json();
 
-    console.log('Received meal log request:', { mealType, foods });
+    console.log('Received meal log request:', { mealType, foods, userId: user.id });
 
     if (!mealType || !foods || !Array.isArray(foods) || foods.length === 0) {
       console.error('Invalid request data:', { mealType, foods });
       return NextResponse.json({ error: 'Missing mealType or foods' }, { status: 400 });
     }
 
-    // For demo purposes, we'll use a hardcoded user ID
-    // In a real app, you'd get this from session/authentication
-    const userId = 'demo-user-123';
-
     const mealLog = await saveMealLog({
-      userId,
+      userId: user.id, // Use real Clerk user ID
       date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
       mealType,
       foods,
     });
 
-    console.log('Meal logged successfully:', mealLog);
+    console.log('Meal logged successfully for user:', user.id, mealLog);
 
     return NextResponse.json({ 
       success: true, 
