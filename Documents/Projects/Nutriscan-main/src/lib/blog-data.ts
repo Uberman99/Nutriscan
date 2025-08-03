@@ -8,7 +8,7 @@ export const blogPosts = [
     date: "2024-01-15",
     category: "Technology",
     readTime: "5 min read",
-    imageUrl: "https://picsum.photos/800/400?random=1",
+    imageUrl: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     content: `
       <p>Food recognition technology has come a long way in recent years. What once seemed like science fiction is now a reality, allowing us to simply point our phone camera at a meal and instantly receive detailed nutritional information.</p>
       
@@ -62,7 +62,7 @@ export const blogPosts = [
     date: "2024-01-12",
     category: "Nutrition",
     readTime: "7 min read",
-    imageUrl: "https://picsum.photos/800/400?random=2",
+    imageUrl: "https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     content: `
       <p>Think you know everything about the foods you eat every day? Think again! Here are ten surprising nutrition facts that might change how you view your daily meals.</p>
       
@@ -108,7 +108,7 @@ export const blogPosts = [
     date: "2024-01-10",
     category: "Lifestyle",
     readTime: "4 min read",
-    imageUrl: "https://picsum.photos/800/400?random=3",
+    imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D",
     content: `
       <p>Eating healthy doesn't have to break the bank. With the right strategies and tools, you can maintain a nutritious diet while staying within your budget. Here's how to use price comparison and smart shopping techniques to eat better for less.</p>
       
