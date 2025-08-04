@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
+import { isDevAuth, getDevUser } from '@/lib/dev-auth';
 import Image from 'next/image'
 import imageCompression from 'browser-image-compression';
 import { Camera, Upload, AlertCircle, Plus } from 'lucide-react'
@@ -41,8 +42,19 @@ interface ScanResults {
   priceData: PriceData[]
 }
 
-export default function FoodScanner() {
-  const { isSignedIn, isLoaded } = useUser()
+  const clerk = useUser();
+  const dev = isDevAuth();
+  let isSignedIn, isLoaded, user;
+  if (dev) {
+    const devUser = getDevUser();
+    isSignedIn = true;
+    isLoaded = true;
+    user = devUser;
+  } else {
+    isSignedIn = clerk.isSignedIn;
+    isLoaded = clerk.isLoaded;
+    user = clerk.user;
+  }
   const [isScanning, setIsScanning] = useState(false)
   const [results, setResults] = useState<ScanResults | null>(null)
   const [error, setError] = useState<string | null>(null)

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useUser, SignInButton, UserButton } from '@clerk/nextjs'
+import { isDevAuth, getDevUser } from '@/lib/dev-auth';
 import { Scan, BookOpen, Home, Camera, Info, BarChart3, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -13,11 +14,19 @@ const navigation = [
   { name: 'Blog', href: '/blog', icon: BookOpen },
   { name: 'About', href: '/about', icon: Info },
 ]
-
 export default function Navigation() {
-  const pathname = usePathname()
-  const { isSignedIn, user } = useUser()
-
+  const pathname = usePathname();
+  const clerk = useUser();
+  const dev = isDevAuth();
+  let isSignedIn, user;
+  if (dev) {
+    const devUser = getDevUser();
+    isSignedIn = true;
+    user = devUser;
+  } else {
+    isSignedIn = clerk.isSignedIn;
+    user = clerk.user;
+  }
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b-2 border-gradient-to-r from-emerald-200 to-blue-200 shadow-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
