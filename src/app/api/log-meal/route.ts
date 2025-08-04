@@ -46,6 +46,9 @@ export async function POST(request: NextRequest) {
     // Log request details for debugging
     console.log('Logging meal with details:', { mealType, foods, userId: effectiveUserId });
 
+    // Log the received mealType for debugging
+    console.log('Received mealType:', mealType);
+
     // Use consistent date format to avoid timezone issues
     const getTodayDate = () => {
       const today = new Date();
