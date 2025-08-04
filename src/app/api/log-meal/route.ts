@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid mealType' }, { status: 400 });
     }
 
-    // Ensure mealType is one of the allowed values
+    // Enforce strict validation for mealType
     const allowedMealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
     if (!allowedMealTypes.includes(mealType)) {
-      console.error('Invalid mealType:', mealType);
-      return NextResponse.json({ error: 'Invalid mealType', allowedMealTypes }, { status: 400 });
+      console.error('Invalid mealType received:', mealType);
+      return NextResponse.json({ error: `Invalid mealType. Allowed values are: ${allowedMealTypes.join(', ')}` }, { status: 400 });
     }
 
     if (!Array.isArray(foods) || foods.some(food => typeof food !== 'object')) {
