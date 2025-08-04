@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
 import { useState, useRef, useEffect } from 'react'
 import { useUser } from '@clerk/nextjs'
-import { isDevAuth, getDevUser } from '@/lib/dev-auth';
+import { isDevAuth } from '@/lib/dev-auth';
 import Image from 'next/image'
 import imageCompression from 'browser-image-compression';
 import { Camera, Upload, AlertCircle, Plus } from 'lucide-react'
@@ -41,23 +41,20 @@ interface ScanResults {
   nutritionData: NutritionInfo[]
   priceData: PriceData[]
 }
-
+export default function FoodScanner() {
   const clerk = useUser();
   const dev = isDevAuth();
-  let isSignedIn, isLoaded, user;
+  let isSignedIn, isLoaded;
   if (dev) {
-    const devUser = getDevUser();
     isSignedIn = true;
     isLoaded = true;
-    user = devUser;
   } else {
     isSignedIn = clerk.isSignedIn;
     isLoaded = clerk.isLoaded;
-    user = clerk.user;
   }
-  const [isScanning, setIsScanning] = useState(false)
-  const [results, setResults] = useState<ScanResults | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [isScanning, setIsScanning] = useState(false);
+  const [results, setResults] = useState<ScanResults | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [selectedImage, setSelectedImage] = useState<string | null>(null)
   const [isClient, setIsClient] = useState(false)
@@ -339,7 +336,7 @@ interface ScanResults {
   }
 
   if (!isClient) {
-    return null // Prevent hydration mismatch
+    return null; // Prevent hydration mismatch
   }
 
   return (
@@ -351,8 +348,7 @@ interface ScanResults {
         </h1>
         <p className="text-lg text-emerald-600 font-semibold">99.7% Meal Detection Accuracy</p>
         <p className="text-gray-600 max-w-2xl mx-auto">
-          Experience 99.7% meal detection accuracy with our revolutionary AI! Get precision nutrition analysis 
-          and exact portion measurements!
+          Experience 99.7% meal detection accuracy with our revolutionary AI! Get precision nutrition analysis and exact portion measurements!
         </p>
       </div>
 

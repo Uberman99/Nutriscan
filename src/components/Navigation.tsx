@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -16,17 +16,12 @@ const navigation = [
 ]
 export default function Navigation() {
   const pathname = usePathname();
-  const clerk = useUser();
+  const { isSignedIn, user } = useUser();
   const dev = isDevAuth();
-  let isSignedIn, user;
-  if (dev) {
-    const devUser = getDevUser();
-    isSignedIn = true;
-    user = devUser;
-  } else {
-    isSignedIn = clerk.isSignedIn;
-    user = clerk.user;
-  }
+
+  // Display mock user info in development mode
+  const displayUser = dev ? getDevUser() : user;
+
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b-2 border-gradient-to-r from-emerald-200 to-blue-200 shadow-xl sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -72,7 +67,7 @@ export default function Navigation() {
             {isSignedIn ? (
               <div className="flex items-center space-x-3">
                 <span className="hidden sm:block text-sm text-gray-600">
-                  Welcome, {user?.firstName || 'User'}!
+                  Welcome, {displayUser?.firstName || 'User'}!
                 </span>
                 <UserButton 
                   appearance={{

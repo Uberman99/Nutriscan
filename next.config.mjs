@@ -1,3 +1,5 @@
+import path from 'path';
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -37,8 +39,15 @@ const nextConfig = {
       config.externals.push('tesseract.js');
     }
     
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@': path.resolve(__dirname, 'src'),
+    };
+    
     return config;
   },
 };
+
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
 export default nextConfig;

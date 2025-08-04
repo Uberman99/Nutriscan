@@ -2,6 +2,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge'
 import { Eye, Brain, Database, DollarSign, Camera, Smartphone, Globe, Zap } from 'lucide-react'
 
+export const dynamic = 'force-dynamic';
+
 export default function About() {
   const features = [
     {
