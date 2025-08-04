@@ -33,8 +33,12 @@ export async function POST(request: NextRequest) {
 
     // Enforce strict validation for mealType
     const allowedMealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
-    if (!allowedMealTypes.includes(mealType)) {
-      console.error('Invalid mealType received:', mealType);
+
+    // Normalize mealType to handle case-insensitive comparisons
+    const normalizedMealType = mealType.charAt(0).toUpperCase() + mealType.slice(1).toLowerCase();
+
+    if (!allowedMealTypes.includes(normalizedMealType)) {
+      console.error('Invalid mealType received:', normalizedMealType);
       return NextResponse.json({ error: `Invalid mealType. Allowed values are: ${allowedMealTypes.join(', ')}` }, { status: 400 });
     }
 
@@ -62,7 +66,7 @@ export async function POST(request: NextRequest) {
     console.log('📅 Logging meal with date:', todayDate);
     
     // Cast mealType to the expected type after validation
-    const validatedMealType = mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+    const validatedMealType = normalizedMealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
 
     const mealLog = await saveMealLog({
       userId: effectiveUserId, // Use effective user ID (real or dev)

@@ -1,33 +1,9 @@
 import { NextResponse } from 'next/server';
 
-// Fallback price data for common foods
-const fallbackPrices: Record<string, number> = {
-  almond: 12.99,
-  almonds: 12.99,
-  nut: 8.99,
-  nuts: 8.99,
-  apple: 3.99,
-  banana: 2.49,
-  orange: 4.99,
-  bread: 2.99,
-  milk: 3.49,
-  cheese: 5.99,
-  chicken: 8.99,
-  beef: 12.99,
-  fish: 10.99,
-  rice: 4.99,
-  pasta: 1.99,
-  tomato: 3.99,
-  potato: 2.99,
-  carrot: 1.99,
-  onion: 1.49,
-  garlic: 0.99
-};
-
 export async function POST(request: Request) {
   try {
     const { foodItems } = await request.json();
-    
+
     if (!foodItems || !Array.isArray(foodItems)) {
       return NextResponse.json({ 
         success: false, 
@@ -35,23 +11,17 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    const pricesWithFallback = foodItems.map((item: { name: string }) => {
-      const price = fallbackPrices[item.name.toLowerCase()] || 0;
-      return { name: item.name, price };
+    // Placeholder for real-time pricing logic
+    return NextResponse.json({ 
+      success: true, 
+      prices: [], 
+      message: 'Real-time pricing logic not implemented yet' 
     });
-
-    return NextResponse.json({
-      success: true,
-      prices: pricesWithFallback,
-      message: 'Prices retrieved successfully (using fallback data)'
-    });
-
   } catch (error) {
-    console.error('Price API error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to get price information',
-      prices: []
+    console.error('Error in /api/prices:', error);
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Internal server error' 
     }, { status: 500 });
   }
 }
