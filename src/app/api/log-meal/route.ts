@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     const allowedMealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
     if (!allowedMealTypes.includes(mealType)) {
       console.error('Invalid mealType:', mealType);
-      return NextResponse.json({ error: 'Invalid mealType' }, { status: 400 });
+      return NextResponse.json({ error: 'Invalid mealType', allowedMealTypes }, { status: 400 });
     }
 
     if (!Array.isArray(foods) || foods.some(food => typeof food !== 'object')) {

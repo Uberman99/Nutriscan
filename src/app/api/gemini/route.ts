@@ -94,6 +94,11 @@ Do not include markdown formatting, code blocks, or any text outside the JSON ob
       if (!response.ok) {
         const errorText = await response.text();
         console.error('[Edge Runtime] Gemini API Error:', response.status, errorText);
+        // Handle Gemini API quota exceeded
+        if (response.status === 429) {
+          console.error('Gemini API quota exceeded');
+          return NextResponse.json({ error: 'Gemini API quota exceeded. Please try again later.' }, { status: 429 });
+        }
         return NextResponse.json({
           description: 'Food analysis failed',
           healthScore: 50,
