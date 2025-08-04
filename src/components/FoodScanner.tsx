@@ -12,23 +12,16 @@ import {
   analyzeImageForFood,
   analyzeFoodWithAI,
   getNutritionData,
-  getPrices,
 } from "@/lib/api";
 import NutritionResults from '@/components/NutritionResults'
 import ResultsSkeleton from '@/components/ResultsSkeleton';
 import { NutritionInfo } from '@/lib/types';
+import { mockPriceData } from '../lib/demo-data';
 
 interface FoodRecognitionResult {
   name: string;
   confidence: number;
   source: string;
-}
-
-interface PriceData {
-  store: string;
-  price: string;
-  unit: string;
-  url: string;
 }
 
 interface ScanResults {
@@ -39,8 +32,16 @@ interface ScanResults {
     suggestions: string[]
   }
   nutritionData: NutritionInfo[]
-  priceData: PriceData[]
 }
+
+// Define PriceData type based on mockPriceData structure
+interface PriceData {
+  store: string;
+  price: string;
+  unit: string;
+  url?: string;
+}
+
 export default function FoodScanner() {
   const clerk = useUser();
   const dev = isDevAuth();
@@ -261,30 +262,15 @@ export default function FoodScanner() {
         return;
       }
 
-      const pricePromises = foodNames.slice(0, 3).map(async (itemName) => {
-        try {
-          const rawPrices = await getPrices(itemName);
-          
-          if (!rawPrices || !rawPrices.stores) {
-            return null;
-          }
-          
-          // Transform API price data to expected format
-          const transformedPrices = rawPrices.stores.map(store => ({
-            store: store.name,
-            price: `$${store.price.toFixed(2)}`,
-            unit: 'per kg',
-            url: store.url
-          }));
-          
-          return transformedPrices;
-        } catch (err) {
-          console.error(`Failed to get prices for ${itemName}:`, err);
-          return null;
-        }
-      });
-      const priceDataResults = await Promise.all(pricePromises);
-      const priceData = priceDataResults.filter((data): data is PriceData[] => data !== null).flat();
+      // Removed price fetching logic as /api/prices route has been deprecated
+      const priceData: PriceData[] = Object.values(mockPriceData).flatMap((item) =>
+        item.stores.map((store) => ({
+          store: store.name,
+          price: `$${store.price.toFixed(2)}`,
+          unit: 'per kg',
+          url: store.url,
+        }))
+      );
 
       const filteredNutritionData = nutritionData.filter((data) => data !== null);
 

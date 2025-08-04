@@ -295,44 +295,9 @@ export async function getNutritionData(foodName: string): Promise<NutritionInfo 
 }
 
 // Price comparison using multiple sources
-export async function getPrices(foodName: string): Promise<{
-  stores: Array<{
-    name: string;
-    price: number;
-    url?: string;
-  }>;
-}> {
-  try {
-    const response = await fetch('/api/prices', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ foodName }),
-    });
-
-    if (!response.ok) {
-      console.warn('Price API response not ok, using fallback');
-      return {
-        stores: [
-          { name: 'ALDI', price: 3.99, url: 'https://aldi.com.au' },
-          { name: 'Coles', price: 4.50, url: 'https://coles.com.au' },
-          { name: 'Woolworths', price: 4.25, url: 'https://woolworths.com.au' }
-        ]
-      };
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error getting price data:', error);
-    return {
-      stores: [
-        { name: 'ALDI', price: 3.99, url: 'https://aldi.com.au' },
-        { name: 'Coles', price: 4.50, url: 'https://coles.com.au' },
-        { name: 'Woolworths', price: 4.25, url: 'https://woolworths.com.au' }
-      ]
-    };
-  }
+export async function getPrices(): Promise<null> {
+  console.warn('getPrices function is deprecated as /api/prices route has been removed.');
+  return null;
 }
 
 // AI Analysis function using Gemini API
