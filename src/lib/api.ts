@@ -268,6 +268,12 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
 // USDA FoodData Central API for nutrition data
 export async function getNutritionData(foodName: string): Promise<NutritionInfo | null> {
   try {
+    if (!foodName || typeof foodName !== 'string') {
+      console.error('Invalid foodName:', foodName);
+      return null;
+    }
+
+    console.log('Fetching nutrition data for:', foodName);
     const response = await fetch('/api/nutrition', {
       method: 'POST',
       headers: {

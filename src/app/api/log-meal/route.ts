@@ -25,10 +25,26 @@ export async function POST(request: NextRequest) {
 
     console.log('Received meal log request:', { mealType, foods, userId: effectiveUserId });
 
-    if (!mealType || !foods || !Array.isArray(foods) || foods.length === 0) {
-      console.error('Invalid request data:', { mealType, foods });
-      return NextResponse.json({ error: 'Missing mealType or foods' }, { status: 400 });
+    // Validate mealType and foods
+    if (!mealType || typeof mealType !== 'string') {
+      console.error('Invalid mealType:', mealType);
+      return NextResponse.json({ error: 'Invalid mealType' }, { status: 400 });
     }
+
+    // Ensure mealType is one of the allowed values
+    const allowedMealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack'];
+    if (!allowedMealTypes.includes(mealType)) {
+      console.error('Invalid mealType:', mealType);
+      return NextResponse.json({ error: 'Invalid mealType' }, { status: 400 });
+    }
+
+    if (!Array.isArray(foods) || foods.some(food => typeof food !== 'object')) {
+      console.error('Invalid foods array:', foods);
+      return NextResponse.json({ error: 'Invalid foods array' }, { status: 400 });
+    }
+
+    // Log request details for debugging
+    console.log('Logging meal with details:', { mealType, foods, userId: effectiveUserId });
 
     // Use consistent date format to avoid timezone issues
     const getTodayDate = () => {
@@ -42,10 +58,13 @@ export async function POST(request: NextRequest) {
     const todayDate = getTodayDate();
     console.log('📅 Logging meal with date:', todayDate);
     
+    // Cast mealType to the expected type after validation
+    const validatedMealType = mealType as 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+
     const mealLog = await saveMealLog({
       userId: effectiveUserId, // Use effective user ID (real or dev)
       date: todayDate,
-      mealType,
+      mealType: validatedMealType,
       foods,
     });
 
