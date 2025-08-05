@@ -21,7 +21,12 @@ interface NutritionResultsProps {
 }
 
 export default function NutritionResults({ results, onClear }: NutritionResultsProps) {
-  const { foodItems, aiAnalysis, nutritionData } = results;
+  const vagueTerms = ['food item', 'item', 'thing', 'object', 'stuff', 'something'];
+  const foodItems = (results.foodItems || []).filter(item => {
+    const name = (item.name || '').toLowerCase().trim();
+    return name && !vagueTerms.includes(name);
+  });
+  const { aiAnalysis, nutritionData } = results;
   const { isSignedIn, isLoaded } = useUser();
   const [isLogging, setIsLogging] = useState(false);
   const [loggedMeal, setLoggedMeal] = useState<string | null>(null);
@@ -43,16 +48,21 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
     console.log('🍽️ Logging meal with nutrition data...', { mealType, nutritionData });
     
     try {
+      if (!nutritionData?.length) {
+        console.error('No nutrition data available to log.');
+        return;
+      }
+
       const payload = {
         mealType,
-        foods: nutritionData.map(nutrition => ({
-          name: nutrition.food_name,
-          calories: nutrition.nf_calories,
-          protein: nutrition.nf_protein,
-          carbs: nutrition.nf_total_carbohydrate,
-          fat: nutrition.nf_total_fat,
-          fiber: nutrition.nf_dietary_fiber,
-        }))
+        foods: nutritionData.map(item => ({
+          name: item.name,
+          calories: item.calories,
+          protein: item.protein,
+          carbs: item.carbs,
+          fat: item.fat,
+          fiber: item.fiber,
+        })),
       };
       
       console.log('📤 Sending nutrition meal log request:', payload);

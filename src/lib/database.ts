@@ -75,9 +75,9 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
   try {
     console.log(`[DB] Attempting to save meal log for user: ${userId}`);
     const result = await dbSql`
-      INSERT INTO meal_logs (user_id, date, meal_type, foods, meal_name)
-      VALUES (${userId}, ${date}, ${mealType}, ${JSON.stringify(foods)}, ${mealType})
-      RETURNING id, user_id, date, meal_type, foods, created_at, meal_name;
+      INSERT INTO meal_logs (user_id, date, meal_type, foods)
+      VALUES (${userId}, ${date}, ${mealType}, ${JSON.stringify(foods)})
+      RETURNING id, user_id, date, meal_type, foods, created_at;
     `;
     console.log(`[DB] Successfully saved meal log with id: ${result.rows[0].id}`);
 
@@ -108,53 +108,30 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
 }
 
 export async function getMealLogsByDate(userId: string, date: string): Promise<MealLog[]> {
-  console.log(`[DB] getMealLogsByDate called with userId: ${userId}, date: ${date}`);
-  
   const dbSql = await getDBConnection();
-  
+
   if (!dbSql) {
-    console.log('[DB] No database connection. Returning empty array.');
     return [];
   }
 
-  try {
-    console.log(`[DB] Executing query for user ${userId} on date ${date}`);
-    const result = await dbSql`
-      SELECT id, user_id, date, meal_type, foods, created_at
-      FROM meal_logs
-      WHERE user_id = ${userId} AND date = ${date}
-      ORDER BY created_at ASC;
-    `;
+  const result = await dbSql`
+    SELECT id, user_id, date, meal_type, foods, created_at
+    FROM meal_logs
+    WHERE user_id = ${userId} AND date = ${date}
+    ORDER BY created_at ASC;
+  `;
 
-    console.log(`[DB] Query result: ${result.rows.length} rows found`);
-    console.log(`[DB] Raw query result:`, result.rows);
+  return result.rows.map(row => ({
+    id: row.id,
+    userId: row.user_id,
+    date: new Date(row.date).toISOString().split('T')[0],
+    mealType: row.meal_type,
+    foods: row.foods,
+    createdAt: new Date(row.created_at),
+  }));
+}
 
-    interface DatabaseRow {
-      id: string;
-      user_id: string;
-      date: string;
-      meal_type: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-      foods: NutritionInfo[];
-      created_at: string;
-    }
-
-    const meals = result.rows.map((row) => ({
-      id: (row as DatabaseRow).id,
-      userId: (row as DatabaseRow).user_id,
-      date: new Date((row as DatabaseRow).date).toISOString().split('T')[0],
-      mealType: (row as DatabaseRow).meal_type,
-      foods: (row as DatabaseRow).foods, // Directly use the foods column
-      createdAt: new Date((row as DatabaseRow).created_at)
-    }));
-
-    console.log(`[DB] Mapped meals:`, meals);
-    return meals;
-  } catch (error) {
-    console.error('[DB] Error in getMealLogsByDate:', error);
-    console.warn('📊 Postgres connection failed, returning empty array for development:', error);
-    return [];
-  }
-}export async function deleteMealLogsByDate(userId: string, date: string): Promise<void> {
+export async function deleteMealLogsByDate(userId: string, date: string): Promise<void> {
   try {
     await sql`
       DELETE FROM meal_logs 

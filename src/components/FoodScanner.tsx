@@ -62,108 +62,33 @@ export default function FoodScanner() {
 
   // Function to log detected foods without nutrition data
   const logDetectedFoods = async (mealType: string) => {
-    console.log('🔐 Authentication status check:', { isLoaded, isSignedIn });
-    
     if (!results?.foodItems.length) {
-      alert('❌ No food items detected to log. Please scan a food item first.');
+      alert('No food items detected to log.');
       return;
     }
-    
-    // Check authentication status
-    if (!isLoaded) {
-      console.log('⏳ Authentication not loaded yet');
-      alert('🔄 Please wait while we verify your authentication status...');
-      return;
-    }
-    
-    // For development: if auth is failing due to rate limits, offer bypass option
-    if (!isSignedIn) {
-      console.log('🔒 User not signed in - offering development bypass');
-      const useDevMode = confirm('🔒 Authentication unavailable. Use development mode to test meal logging?');
-      if (!useDevMode) {
-        alert('🔒 Please sign in to log your meals. You can sign in from the navigation menu.');
-        return;
-      }
-      
-      // Use development endpoint
-      console.log('🧪 Using development meal logging');
-      try {
-        const payload = {
-          mealType,
-          foods: results.foodItems.map(item => ({
-            name: item.name,
-            calories: 100,
-            protein: 5,
-            carbs: 15,
-            fat: 3,
-            fiber: 2,
-            confidence: item.confidence,
-            source: item.source
-          }))
-        };
-        
-        const response = await fetch('/api/dev-log-meal', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
 
-        const responseData = await response.json();
-        
-        if (response.ok && responseData.success) {
-          alert(`✅ Meal logged successfully as ${mealType} (Development Mode)!`);
-          console.log('✅ Development meal logging successful:', responseData);
-        } else {
-          alert(`❌ Failed to log meal: ${responseData.error}`);
-        }
-      } catch (error) {
-        alert(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      }
-      return;
-    }
-    
-    console.log('✅ User is authenticated, proceeding with meal logging');
-    console.log('🍽️ Starting meal log process...', { mealType, foodItems: results.foodItems });
-    
-    try {
-      const payload = {
-        mealType,
-        foods: results.foodItems.map(item => ({
-          name: item.name,
-          calories: 100, // Default fallback calories
-          protein: 5,    // Default fallback values
-          carbs: 15,
-          fat: 3,
-          fiber: 2,
-          confidence: item.confidence,
-          source: item.source
-        }))
-      };
-      
-      console.log('📤 Sending meal log request:', payload);
-      
-      const response = await fetch('/api/log-meal', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload)
-      });
+    const payload = {
+      mealType,
+      foods: results.foodItems.map(item => ({
+        name: item.name,
+        calories: item.calories,
+        protein: item.protein,
+        carbs: item.carbs,
+        fat: item.fat,
+        fiber: item.fiber,
+      })),
+    };
 
-      console.log('📥 Meal log response status:', response.status);
-      const responseData = await response.json();
-      console.log('📥 Meal log response data:', responseData);
+    const response = await fetch('/api/log-meal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
 
-      if (response.ok && responseData.success) {
-        alert(`✅ Meal logged successfully as ${mealType}!`);
-        console.log('✅ Meal logging successful:', responseData);
-      } else {
-        console.error('❌ Failed to log meal:', responseData);
-        alert(`❌ Failed to log meal: ${responseData.error || 'Unknown error'}. Please try again.`);
-      }
-    } catch (error) {
-      console.error('❌ Error logging meal:', error);
-      alert(`❌ Error logging meal: ${error instanceof Error ? error.message : 'Unknown error'}. Please try again.`);
+    if (response.ok) {
+      alert('Meal logged successfully!');
+    } else {
+      alert('Failed to log meal.');
     }
   };
 

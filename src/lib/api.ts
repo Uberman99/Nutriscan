@@ -62,7 +62,7 @@ export async function analyzeImageForFood(imageFile: File): Promise<FoodRecognit
       // Fallback: analyze image size to guess food type
       const imageSize = imageFile.size;
       if (imageSize > 1000000) { // Large image likely contains food
-        return { source: 'Tesseract', results: [{ name: 'Food Item', confidence: 0.4 }] };
+        return { source: 'Tesseract', results: [{ name: 'Generic Food', confidence: 0.5 }] };
       }
       
       return { source: 'Tesseract', results: [] };

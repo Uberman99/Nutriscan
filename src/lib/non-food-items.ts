@@ -438,12 +438,15 @@ export const NON_FOOD_ITEMS = new Set([
  */
 export function isValidFoodItem(item: string): boolean {
   if (!item || typeof item !== 'string') return false;
-  
   const cleanItem = item.toLowerCase().trim();
-  
+  const vagueTerms = ['item', 'thing', 'object', 'stuff', 'something'];
   // Remove very short terms only
   if (cleanItem.length < 2) return false;
-  
+  // If it contains a vague term, never allow as food
+  if (vagueTerms.some(term => cleanItem === term || cleanItem.endsWith(' ' + term) || cleanItem.includes(term + ' '))) {
+    console.log(`❌ Food rejected for vague term: ${item}`);
+    return false;
+  }
   // Check against our comprehensive non-food list - but be more selective
   if (NON_FOOD_ITEMS.has(cleanItem)) {
     // Even if it's in the non-food list, allow if it contains obvious food words
@@ -460,14 +463,12 @@ export function isValidFoodItem(item: string): boolean {
       'chaat', 'vada', 'upma', 'poha', 'paratha', 'kulcha', 'bhaji', 'kofta',
       'raita', 'lassi', 'chai', 'halwa', 'gulab jamun', 'jalebi', 'barfi', 'laddu'
     ];
-    
     if (!obviousFoodWords.some(word => cleanItem.includes(word))) {
       console.log(`❌ Food rejected by non-food list: ${item}`);
       return false;
     }
   }
-
-  // BE VERY LENIENT - Accept almost anything that could be food
+  // BE LENIENT - Accept almost anything that could be food, but not vague terms
   const easyFoodWords = [
     'cake', 'tart', 'pie', 'cookie', 'bread', 'pasta', 'pizza', 'burger', 'sandwich',
     'salad', 'soup', 'rice', 'chicken', 'beef', 'fish', 'meat', 'cheese', 'milk',
@@ -487,27 +488,23 @@ export function isValidFoodItem(item: string): boolean {
     'sushi', 'ramen', 'kimchi', 'pad thai', 'pho', 'dumpling', 'spring roll',
     'fried rice', 'lo mein', 'teriyaki', 'tempura', 'miso', 'udon', 'soba'
   ];
-  
-  // If it contains any obvious food word, it's valid
-  if (easyFoodWords.some(word => cleanItem.includes(word))) {
+  // If it contains any obvious food word, it's valid, but not if it's a vague term
+  if (easyFoodWords.some(word => cleanItem.includes(word)) && !vagueTerms.some(term => cleanItem === term || cleanItem.endsWith(' ' + term) || cleanItem.includes(term + ' '))) {
     console.log(`✅ Food validated by food keywords: ${item}`);
     return true;
   }
-  
   // If it's a reasonable length and doesn't look like gibberish, probably food
   if (cleanItem.length >= 3 && cleanItem.length <= 30) {
     // Check if it has vowels and looks like real words
     const hasVowels = /[aeiou]/i.test(cleanItem);
     const notAllConsonants = !/^[bcdfghjklmnpqrstvwxyz]+$/i.test(cleanItem);
     const notNumbers = !/^\d+$/.test(cleanItem);
-    
     // MUCH MORE PERMISSIVE: Accept if it looks like real words
-    if (hasVowels && notAllConsonants && notNumbers) {
+    if (hasVowels && notAllConsonants && notNumbers && !vagueTerms.some(term => cleanItem === term || cleanItem.endsWith(' ' + term) || cleanItem.includes(term + ' '))) {
       console.log(`✅ Food validated by heuristics: ${item}`);
       return true;
     }
   }
-  
   console.log(`❌ Food rejected: ${item}`);
   return false;
 }
@@ -518,15 +515,21 @@ export function isValidFoodItem(item: string): boolean {
  */
 export function filterFoodItems(items: string[]): string[] {
   const filtered = items
-    .filter(item => isValidFoodItem(item))
+    .filter(item => {
+      const isValid = isValidFoodItem(item);
+      if (!isValid) {
+        console.log(`❌ Excluded non-food item: ${item}`);
+      }
+      return isValid;
+    })
     .filter((item, index, arr) => arr.indexOf(item.toLowerCase()) === index); // Remove duplicates
-  
+
   // If filtering removes everything, return original (avoid false negatives)
   if (filtered.length === 0 && items.length > 0) {
     console.log('⚠️ Filtering would remove all items - returning original list to avoid false negatives');
     return items.slice(0, 10); // Return original but limit count
   }
-  
+
   return filtered
     .sort((a, b) => {
       // Prioritize single-word food items
@@ -543,24 +546,18 @@ export function filterFoodItems(items: string[]): string[] {
  */
 export function getFoodConfidenceScore(item: string): number {
   if (!isValidFoodItem(item)) return 0;
-  
   const cleanItem = item.toLowerCase().trim();
   let score = 0.5; // Base score
-  
   // Bonus for common food words
   const commonFoodWords = ['food', 'meal', 'dish', 'fruit', 'vegetable', 'meat', 'drink', 'beverage'];
   if (commonFoodWords.some(word => cleanItem.includes(word))) score += 0.3;
-  
   // Bonus for specific food names
   const specificFoods = ['apple', 'banana', 'pizza', 'burger', 'salad', 'chicken', 'rice', 'bread'];
   if (specificFoods.some(food => cleanItem.includes(food))) score += 0.4;
-  
-  // Penalty for vague terms
+  // Penalty for vague terms (stronger penalty)
   const vagueTerms = ['item', 'thing', 'object', 'stuff', 'something'];
-  if (vagueTerms.some(term => cleanItem.includes(term))) score -= 0.3;
-  
+  if (vagueTerms.some(term => cleanItem === term || cleanItem.endsWith(' ' + term) || cleanItem.includes(term + ' '))) score -= 0.7;
   // Bonus for single, specific words
   if (!/\s/.test(cleanItem) && cleanItem.length >= 3 && cleanItem.length <= 15) score += 0.1;
-  
   return Math.max(0, Math.min(1, score)); // Clamp between 0 and 1
 }
