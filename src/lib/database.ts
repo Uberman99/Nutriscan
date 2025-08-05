@@ -62,9 +62,9 @@ export async function initializeDatabase() {
 
 export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): Promise<MealLog> {
   const { userId, date, mealType, foods } = mealLog;
-  
+
   const dbSql = await getDBConnection();
-  
+
   if (!dbSql) {
     // In a real production scenario, we should not fall back to mock data.
     // Throw an error so the calling API route knows the database is unavailable.
@@ -75,12 +75,12 @@ export async function saveMealLog(mealLog: Omit<MealLog, 'id' | 'createdAt'>): P
   try {
     console.log(`[DB] Attempting to save meal log for user: ${userId}`);
     const result = await dbSql`
-      INSERT INTO meal_logs (user_id, date, meal_type, foods)
-      VALUES (${userId}, ${date}, ${mealType}, ${JSON.stringify(foods)})
-      RETURNING id, user_id, date, meal_type, foods, created_at;
+      INSERT INTO meal_logs (user_id, date, meal_type, foods, meal_name)
+      VALUES (${userId}, ${date}, ${mealType}, ${JSON.stringify(foods)}, ${mealType})
+      RETURNING id, user_id, date, meal_type, foods, created_at, meal_name;
     `;
     console.log(`[DB] Successfully saved meal log with id: ${result.rows[0].id}`);
-    
+
     interface DatabaseRow {
       id: string;
       user_id: string;
@@ -143,7 +143,7 @@ export async function getMealLogsByDate(userId: string, date: string): Promise<M
       userId: (row as DatabaseRow).user_id,
       date: new Date((row as DatabaseRow).date).toISOString().split('T')[0],
       mealType: (row as DatabaseRow).meal_type,
-      foods: (row as DatabaseRow).foods,
+      foods: (row as DatabaseRow).foods, // Directly use the foods column
       createdAt: new Date((row as DatabaseRow).created_at)
     }));
 
