@@ -10,31 +10,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        primary: "#4CAF50",
-        secondary: "#FF9800",
-        accent: "#03A9F4",
-        background: "#F5F5F5",
-        foreground: "#212121",
-      },
-      spacing: {
-        18: "4.5rem",
-        22: "5.5rem",
-      },
-      typography: {
-        DEFAULT: {
-          css: {
-            color: "#212121",
-            a: {
-              color: "#03A9F4",
-              textDecoration: "none",
-              "&:hover": {
-                textDecoration: "underline",
-              },
-            },
-          },
-        },
-      },
+      // Keep extend empty unless specific, unique customizations are needed.
+      // The previous color palette can be replaced with standard Tailwind utilities
+      // e.g., bg-green-500, bg-amber-500, bg-sky-500, etc.
     },
   },
   plugins: [typography, forms],

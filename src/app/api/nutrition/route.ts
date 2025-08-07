@@ -1,5 +1,5 @@
+// src/app/api/nutrition/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { mockNutritionData } from '@/lib/demo-data';
 import { NON_FOOD_ITEMS } from '@/lib/non-food-items';
 import stringSimilarity from 'string-similarity';
 import { getHealthData, calculateGlycemicLoad } from '@/lib/health-data';
@@ -19,141 +19,39 @@ export async function POST(request: NextRequest) {
   try {
     const { foodName } = await request.json();
     
-    if (!foodName) {
+    if (!foodName || typeof foodName !== 'string' || foodName.trim() === '') {
       return NextResponse.json({ error: 'No food name provided' }, { status: 400 });
     }
 
-    console.log(`Checking foodName against NON_FOOD_ITEMS: "${foodName.toLowerCase()}"`);
+    const cleanedFoodName = foodName.trim().toLowerCase();
 
-    // Robust non-food item check using string-similarity
+    // Robust non-food item check using string-similarity to catch close matches
     const nonFoodList = Array.from(NON_FOOD_ITEMS);
-    const { bestMatch } = stringSimilarity.findBestMatch(foodName.toLowerCase(), nonFoodList);
+    const { bestMatch } = stringSimilarity.findBestMatch(cleanedFoodName, nonFoodList);
+    
     if (bestMatch.rating > 0.85) {
-        console.log(`Rejecting non-food item from nutrition search (fuzzy match): "${foodName}" ~ "${bestMatch.target}"`);
+        console.log(`Rejecting non-food item (fuzzy match): "${foodName}" ~ "${bestMatch.target}"`);
         return NextResponse.json({
-            food_name: foodName,
-            nutrients: [],
-            nf_calories: 0,
-            message: 'This is not a food item.'
-        });
+            error: `'${foodName}' is recognized as a non-food item.`,
+        }, { status: 400 });
     }
     
-    // If no API key is available, use mock data
+    // If no API key is available, the service is non-functional. Fail immediately.
     if (!USDA_API_KEY) {
-      console.warn('USDA API key is missing. Using mock data for USDA Nutrition API');
-      
-      const lowerFoodName = foodName.toLowerCase();
-      const mockDataKey = Object.keys(mockNutritionData).find(key => key.toLowerCase() === lowerFoodName);
-      const mockData = mockDataKey ? mockNutritionData[mockDataKey as keyof typeof mockNutritionData] : undefined;
-
-      if (mockData) {
-        // Define a base type for what we need to access to avoid using 'any'
-        interface BaseMockData {
-            foodName: string;
-            calories: number;
-            macronutrients?: { name: string; amount: number; unit: string }[];
-            exactPortion?: { unit: string; weight: number };
-            dataSource?: string;
-        }
-        const safeMockData = mockData as BaseMockData;
-
-        interface Nutrient { name: string; amount: number; unit: string; }
-
-        const getNutrient = (name: string) => {
-            if (safeMockData.macronutrients) {
-                return safeMockData.macronutrients.find((n: Nutrient) => n.name.toLowerCase().includes(name.toLowerCase()));
-            }
-            return undefined;
-        }
-        
-        const carbsNutrient = getNutrient('carbohydrate');
-        const carbs = carbsNutrient ? carbsNutrient.amount : 0;
-
-        const healthData = getHealthData(safeMockData.foodName);
-        const glycemicLoad = healthData.glycemicIndex ? calculateGlycemicLoad(healthData.glycemicIndex, carbs) : undefined;
-
-        const healthImpact: HealthImpactData = {
-          glycemicIndex: healthData.glycemicIndex,
-          glycemicLoad: glycemicLoad,
-          inflammatoryScore: healthData.inflammatoryScore,
-          inflammatoryText: getInflammatoryText(healthData.inflammatoryScore),
-        };
-
-        const nutritionInfo: NutritionInfo = {
-          food_name: safeMockData.foodName,
-          brand_name: safeMockData.dataSource || 'MockData',
-          serving_qty: 1,
-          serving_unit: safeMockData.exactPortion?.unit || 'serving',
-          serving_weight_grams: safeMockData.exactPortion?.weight || 100,
-          nf_calories: safeMockData.calories,
-          nf_total_fat: getNutrient('fat')?.amount || null,
-          nf_saturated_fat: getNutrient('saturated fat')?.amount || null,
-          nf_cholesterol: null,
-          nf_sodium: getNutrient('sodium')?.amount || null,
-          nf_total_carbohydrate: carbs,
-          nf_dietary_fiber: getNutrient('fiber')?.amount || null,
-          nf_sugars: getNutrient('sugars')?.amount || null,
-          nf_protein: getNutrient('protein')?.amount || null,
-          nf_potassium: null,
-          nf_p: null,
-          healthData: healthImpact,
-        };
-        
-        return NextResponse.json(nutritionInfo);
-      }
-      
-      // Fallback for generic terms if no specific mock data is found
-      const genericTerms = ['food item', 'mixed meal', 'prepared meal', 'object', 'thing'];
-      if (genericTerms.some(term => lowerFoodName.includes(term))) {
-        const genericData = {
-          food_name: 'Mixed Food Item',
-          nf_calories: 250,
-          nf_protein: 12.0,
-          nf_total_fat: 8.5,
-          nf_total_carbohydrate: 35.0,
-          nf_dietary_fiber: 4.2,
-          nf_sugars: 8.5,
-          nf_sodium: 450,
-          serving_unit: 'serving',
-          serving_qty: 1,
-          serving_weight_grams: 200,
-          brand_name: null,
-          nf_saturated_fat: null,
-          nf_cholesterol: null,
-          nf_potassium: null,
-          nf_p: null,
-        };
-        const healthData = getHealthData(genericData.food_name);
-        const carbs = genericData.nf_total_carbohydrate || 0;
-        const glycemicLoad = healthData.glycemicIndex ? calculateGlycemicLoad(healthData.glycemicIndex, carbs) : undefined;
-        
-        const healthImpact: HealthImpactData = {
-          glycemicIndex: healthData.glycemicIndex,
-          glycemicLoad: glycemicLoad,
-          inflammatoryScore: healthData.inflammatoryScore,
-          inflammatoryText: getInflammatoryText(healthData.inflammatoryScore),
-        };
-
-        const nutritionInfo: NutritionInfo = {
-          ...genericData,
-          healthData: healthImpact,
-        };
-
-        return NextResponse.json(nutritionInfo);
-      }
-      
-      return NextResponse.json({ error: `No mock data found for "${foodName}"` }, { status: 404 });
+      console.error('CRITICAL: USDA_API_KEY is not configured in environment variables.');
+      return NextResponse.json({ error: 'Nutrition service is currently unavailable.' }, { status: 503 });
     }
 
-    // If API key is present, proceed with USDA API call
-    const searchResponse = await fetch(`${USDA_BASE_URL}/foods/search?query=${encodeURIComponent(foodName)}&api_key=${USDA_API_KEY}`);
+    // --- Proceed with USDA API call ---
+    const searchResponse = await fetch(`${USDA_BASE_URL}/foods/search?query=${encodeURIComponent(cleanedFoodName)}&api_key=${USDA_API_KEY}`);
     if (!searchResponse.ok) {
-      throw new Error(`USDA API error for food search: ${searchResponse.statusText}`);
+      console.error(`USDA search API error: ${searchResponse.status} ${searchResponse.statusText}`);
+      throw new Error(`USDA API is unavailable.`);
     }
     const searchData = await searchResponse.json();
 
     if (!searchData.foods || searchData.foods.length === 0) {
-      return NextResponse.json({ error: 'Food not found in USDA database' }, { status: 404 });
+      return NextResponse.json({ error: `Food '${foodName}' not found in USDA database.` }, { status: 404 });
     }
 
     const food = searchData.foods[0];
@@ -161,20 +59,19 @@ export async function POST(request: NextRequest) {
 
     const detailsResponse = await fetch(`${USDA_BASE_URL}/food/${fdcId}?api_key=${USDA_API_KEY}`);
     if (!detailsResponse.ok) {
-      throw new Error(`USDA API error for food details: ${detailsResponse.statusText}`);
+        console.error(`USDA details API error: ${detailsResponse.status} ${detailsResponse.statusText}`);
+        throw new Error(`Could not retrieve details for FDC ID ${fdcId}.`);
     }
     const detailsData = await detailsResponse.json();
 
     interface FoodNutrient {
       nutrient: { id: number };
-      amount: number;
+      amount?: number;
     }
 
-    const getNutrientValue = (id: number) => {
-      const nutrients = detailsData.foodNutrients;
-      if (!Array.isArray(nutrients)) return null;
-      const nutrient = nutrients.find((n: FoodNutrient) => n.nutrient.id === id);
-      return nutrient ? nutrient.amount : null;
+    const getNutrientValue = (id: number): number | null => {
+      const nutrient = detailsData.foodNutrients?.find((n: FoodNutrient) => n.nutrient.id === id);
+      return nutrient?.amount ?? null;
     };
 
     const carbs = getNutrientValue(1005) || 0;
@@ -205,6 +102,7 @@ export async function POST(request: NextRequest) {
       nf_protein: getNutrientValue(1003),
       nf_potassium: getNutrientValue(1092),
       nf_p: getNutrientValue(1091),
+      photo: { thumb: food.foodNutrients?.[0]?.photo?.thumb || null },
       healthData: healthImpact,
     };
 

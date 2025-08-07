@@ -1,17 +1,22 @@
 // src/middleware.ts
 import { clerkMiddleware } from '@clerk/nextjs/server';
-import type { NextRequest } from 'next/server';
-import type { NextFetchEvent } from 'next/server';
 
-export default function customClerkMiddleware(req: NextRequest, ev: NextFetchEvent) {
-  console.log(`Middleware applied to route: ${req.url}`);
-  if (req.url.includes('_not-found')) {
-    console.log('Skipping middleware for _not-found route');
-    return;
-  }
-  return clerkMiddleware()(req, ev);
-}
+export default clerkMiddleware({
+  // Add routes that can be accessed while signed out
+  // The scan page and its API should NOT be public.
+  publicRoutes: [
+    '/',
+    '/about',
+    '/blog/(.*)',
+  ],
+
+  // Add routes that can be accessed while signed out
+  // and will not be clerk-loaded
+  ignoredRoutes: [],
+});
 
 export const config = {
-  matcher: ['/((?!.+\.[\w]+$|_next|_not-found).*)', '/', '/(api|trpc)(.*)'],
+  // The following matcher runs middleware on all routes
+  // except static assets and internal Next.js paths.
+  matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
 };

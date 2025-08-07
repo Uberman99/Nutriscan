@@ -31,7 +31,7 @@ export interface HealthImpactData {
 }
 
 export interface MealLog {
-  id: string;
+  id: number; // Corrected from string to number to match SERIAL type
   userId: string;
   date: string; // YYYY-MM-DD
   mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';

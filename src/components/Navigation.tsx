@@ -1,11 +1,11 @@
-'use client';
+'use client'
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { useUser, SignInButton, UserButton } from '@clerk/nextjs'
-import { isDevAuth, getDevUser } from '@/lib/dev-auth';
-import { Scan, BookOpen, Home, Camera, Info, BarChart3, User } from 'lucide-react'
+import { Scan, BookOpen, Home, Camera, Info, BarChart3, LogIn } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs'
+import { Button } from './ui/button'
 
 const navigation = [
   { name: 'Home', href: '/', icon: Home },
@@ -14,13 +14,9 @@ const navigation = [
   { name: 'Blog', href: '/blog', icon: BookOpen },
   { name: 'About', href: '/about', icon: Info },
 ]
-export default function Navigation() {
-  const pathname = usePathname();
-  const { isSignedIn, user } = useUser();
-  const dev = isDevAuth();
 
-  // Display mock user info in development mode
-  const displayUser = dev ? getDevUser() : user;
+export default function Navigation() {
+  const pathname = usePathname()
 
   return (
     <nav className="bg-white/95 backdrop-blur-md border-b-2 border-gradient-to-r from-emerald-200 to-blue-200 shadow-xl sticky top-0 z-50">
@@ -60,31 +56,21 @@ export default function Navigation() {
                 </Link>
               )
             })}
-          </div>
-          
-          {/* Authentication Section */}
-          <div className="flex items-center space-x-4">
-            {isSignedIn ? (
-              <div className="flex items-center space-x-3">
-                <span className="hidden sm:block text-sm text-gray-600">
-                  Welcome, {displayUser?.firstName || 'User'}!
-                </span>
-                <UserButton 
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-9 h-9 rounded-full ring-2 ring-emerald-200 hover:ring-emerald-300 transition-all"
-                    }
-                  }}
-                />
-              </div>
-            ) : (
-              <SignInButton mode="modal">
-                <button className="flex items-center space-x-2 bg-gradient-to-r from-emerald-500 to-blue-500 text-white px-4 py-2 rounded-xl font-semibold hover:from-emerald-600 hover:to-blue-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-xl">
-                  <User className="h-4 w-4" />
-                  <span>Sign In</span>
-                </button>
-              </SignInButton>
-            )}
+            
+            {/* --- AUTHENTICATION CONTROLS --- */}
+            <div className="ml-4 flex items-center">
+              <SignedOut>
+                <SignInButton mode="modal">
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <LogIn className="h-4 w-4" />
+                    Sign In
+                  </Button>
+                </SignInButton>
+              </SignedOut>
+              <SignedIn>
+                <UserButton afterSignOutUrl="/" />
+              </SignedIn>
+            </div>
           </div>
         </div>
       </div>
