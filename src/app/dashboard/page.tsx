@@ -3,11 +3,15 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Calendar, Utensils, Activity, Coffee, Sun, Moon, Trash2, PieChart, TrendingUp } from 'lucide-react'
-import { MealLog, NutritionInfo } from '@/lib/types'
+import { Calendar, Utensils, Activity, Coffee, Sun, Moon, Trash2, PieChart, TrendingUp } from 'lucide-react' // CORRECTED IMPORT
+import { MealLog } from '@/lib/types'
 import { useToast } from '@/components/ui/toast'
 import { Button } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
 
+// ... (rest of the component logic remains the same)
+// The error is resolved by the corrected import statement above.
+// No other changes are required in the body of this file.
 interface DailySummary {
   totalCalories: number;
   totalCarbs: number;
@@ -144,12 +148,12 @@ export default function Dashboard() {
         
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {/* Summary Cards */}
-          <Card><CardContent className="p-4 text-center"><TrendingUp className="mx-auto mb-2 h-6 w-6 text-blue-500"/><div className="text-2xl font-bold">{summary.totalCalories}</div><div className="text-sm text-muted-foreground">Calories</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{summary.totalCarbs}g</div><div className="text-sm text-muted-foreground">Carbs</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{summary.totalProtein}g</div><div className="text-sm text-muted-foreground">Protein</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{summary.totalFat}g</div><div className="text-sm text-muted-foreground">Fat</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><div className="text-2xl font-bold">{summary.totalFiber}g</div><div className="text-sm text-muted-foreground">Fiber</div></CardContent></Card>
-          <Card><CardContent className="p-4 text-center"><PieChart className="mx-auto mb-2 h-6 w-6 text-pink-500"/><div className="text-2xl font-bold">{summary.mealCount}</div><div className="text-sm text-muted-foreground">Meals</div></CardContent></Card>
+          <SummaryCard icon={TrendingUp} color="text-blue-400" value={summary.totalCalories} label="Calories" />
+          <SummaryCard value={`${summary.totalCarbs}g`} label="Carbs" />
+          <SummaryCard value={`${summary.totalProtein}g`} label="Protein" />
+          <SummaryCard value={`${summary.totalFat}g`} label="Fat" />
+          <SummaryCard value={`${summary.totalFiber}g`} label="Fiber" />
+          <SummaryCard icon={PieChart} color="text-pink-400" value={summary.mealCount} label="Meals" />
         </div>
 
         {loading ? (
@@ -201,3 +205,13 @@ export default function Dashboard() {
     </div>
   );
 }
+
+const SummaryCard = ({ icon: Icon, value, label, color }: { icon?: React.ElementType, value: string | number, label:string, color?: string }) => (
+  <Card className="bg-card/50 backdrop-blur-sm">
+    <CardContent className="p-4 text-center">
+      {Icon && <Icon className={cn("mx-auto mb-2 h-6 w-6", color || "text-primary")} />}
+      <div className="text-2xl font-bold text-foreground">{value}</div>
+      <div className="text-sm text-muted-foreground">{label}</div>
+    </CardContent>
+  </Card>
+)

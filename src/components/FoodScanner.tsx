@@ -6,20 +6,21 @@ import imageCompression from 'browser-image-compression';
 import { Camera, Upload, AlertCircle, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  analyzeImageForFood,
-  analyzeFoodWithAI,
-  getNutritionData,
-  getPrices,
-} from "@/lib/api";
 import NutritionResults from '@/components/NutritionResults'
 import ResultsSkeleton from '@/components/ResultsSkeleton';
 import { NutritionInfo } from '@/lib/types';
 
+// Define precise types for the component's state to eliminate 'any'
 interface FoodRecognitionResult {
   name: string;
   confidence: number;
   source: string;
+}
+
+interface AiAnalysisResult {
+    description: string;
+    healthScore: number;
+    suggestions: string[];
 }
 
 interface PriceData {
@@ -30,13 +31,9 @@ interface PriceData {
 
 interface ScanResults {
   foodItems: FoodRecognitionResult[];
-  aiAnalysis: {
-    description: string
-    healthScore: number
-    suggestions: string[]
-  }
-  nutritionData: NutritionInfo[]
-  priceData: PriceData[]
+  aiAnalysis: AiAnalysisResult;
+  nutritionData: NutritionInfo[];
+  priceData: PriceData[];
 }
 
 export default function FoodScanner() {
@@ -59,41 +56,29 @@ export default function FoodScanner() {
 
     try {
       const options = {
-        maxSizeMB: 0.5,
-        maxWidthOrHeight: 1280,
+        maxSizeMB: 1,
+        maxWidthOrHeight: 1920,
         useWebWorker: true,
       }
       
       const compressedFile = await imageCompression(file, options);
       
-      const foodItems = await analyzeImageForFood(compressedFile);
-      
-      if (foodItems.length === 0 || foodItems[0].name === 'No food recognized') {
-        throw new Error('No food items were detected in the image. Please try again with a clearer picture of the food.')
+      const formData = new FormData();
+      formData.append('image', compressedFile);
+
+      // Single API call to the unified backend
+      const response = await fetch('/api/scan-food', {
+          method: 'POST',
+          body: formData,
+      });
+
+      if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.details || 'Failed to analyze food.');
       }
 
-      const foodNames = foodItems.map(item => item.name);
-      const aiAnalysis = await analyzeFoodWithAI(foodNames);
-
-      const nutritionPromises = foodNames.slice(0, 3).map(itemName => getNutritionData(itemName));
-      const nutritionData = (await Promise.all(nutritionPromises)).filter((item): item is NutritionInfo => item !== null);
-
-      if (nutritionData.length === 0) {
-        throw new Error('Could not retrieve valid nutrition data for the detected food items. The food may not be in our database.');
-      }
-
-      const pricePromises = foodNames.slice(0, 3).map(itemName => getPrices(itemName));
-      const priceDataResults = await Promise.all(pricePromises);
-      const priceData = priceDataResults
-        .filter((data): data is { stores: PriceData[] } => data && Array.isArray(data.stores))
-        .flatMap(data => data.stores);
-
-      setResults({
-        foodItems,
-        aiAnalysis,
-        nutritionData,
-        priceData
-      })
+      const scanResults: ScanResults = await response.json();
+      setResults(scanResults);
 
     } catch (err) {
       console.error('Scanning error:', err)

@@ -8,7 +8,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border bg-card text-card-foreground shadow-sm",
+      "rounded-2xl border border-white/10 bg-card text-card-foreground shadow-xl shadow-black/20 transition-all duration-300 hover:border-primary/50",
       className
     )}
     {...props}
@@ -16,6 +16,8 @@ const Card = React.forwardRef<
 ))
 Card.displayName = "Card"
 
+// ... (CardHeader, CardTitle, CardDescription, CardContent, CardFooter remain the same)
+// ... (You can copy the rest of the original Card component file here)
 const CardHeader = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement>
@@ -74,5 +76,6 @@ const CardFooter = React.forwardRef<
   />
 ))
 CardFooter.displayName = "CardFooter"
+
 
 export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }

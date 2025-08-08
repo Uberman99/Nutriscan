@@ -8,30 +8,172 @@ import { Activity, Star, Utensils, HeartPulse, Flame, BrainCircuit, Lightbulb, C
 import { NutritionInfo } from "@/lib/types";
 import { useToast } from "@/components/ui/toast";
 
+// --- TYPE DEFINITIONS ---
+interface FoodRecognitionResult {
+  name: string;
+  confidence: number;
+}
+
+interface ScanResults {
+  foodItems: FoodRecognitionResult[];
+  aiAnalysis: {
+    description: string;
+    healthScore: number;
+    suggestions: string[];
+  };
+  nutritionData: NutritionInfo[];
+}
+
+interface NutritionResultsProps {
+  results: ScanResults;
+  onClear: () => void;
+}
+
+// --- SUB-COMPONENTS (DEFINED BEFORE USE) ---
+
 const HealthScoreRing = ({ score }: { score: number }) => {
-    const radius = 50;
-    const stroke = 10;
+    const radius = 60;
+    const stroke = 12;
     const normalizedRadius = radius - stroke * 0.5;
     const circumference = normalizedRadius * 2 * Math.PI;
     const progress = Math.max(0, Math.min(score, 100));
     const offset = circumference - (progress / 100) * circumference;
-    let colorClass = "text-accent";
-    if (score < 75) colorClass = "text-yellow-500";
-    if (score < 50) colorClass = "text-orange-500";
-    if (score < 30) colorClass = "text-destructive";
+
+    let color = "hsl(var(--primary))"; // Green
+    if (score < 75) color = "hsl(48, 96%, 51%)"; // Yellow
+    if (score < 50) color = "hsl(29, 96%, 51%)"; // Orange
+    if (score < 30) color = "hsl(var(--destructive))"; // Red
+
     return (
-      <div className="relative w-28 h-28 flex items-center justify-center animate-in fade-in duration-500">
+      <div className="relative w-36 h-36 flex items-center justify-center animate-in fade-in duration-500">
         <svg height={radius * 2} width={radius * 2} className="-rotate-90">
-          <circle className="text-muted/50" stroke="currentColor" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius}/>
-          <circle className={`${colorClass} transition-all duration-1000 ease-out`} stroke="currentColor" fill="transparent" strokeWidth={stroke} strokeDasharray={circumference + " " + circumference} style={{ strokeDashoffset: offset }} r={normalizedRadius} cx={radius} cy={radius} strokeLinecap="round"/>
+          <defs>
+            <filter id="glow">
+              <feGaussianBlur stdDeviation="3.5" result="coloredBlur" />
+              <feMerge>
+                <feMergeNode in="coloredBlur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style={{stopColor: color, stopOpacity:1}} />
+                <stop offset="100%" style={{stopColor: 'hsl(var(--accent))', stopOpacity:1}} />
+            </linearGradient>
+          </defs>
+          <circle className="text-border" stroke="currentColor" strokeOpacity="0.3" fill="transparent" strokeWidth={stroke} r={normalizedRadius} cx={radius} cy={radius}/>
+          <circle
+            stroke="url(#ringGradient)"
+            fill="transparent"
+            strokeWidth={stroke}
+            strokeDasharray={circumference + " " + circumference}
+            style={{ strokeDashoffset: offset, transition: 'stroke-dashoffset 1.5s ease-out' }}
+            r={normalizedRadius}
+            cx={radius}
+            cy={radius}
+            strokeLinecap="round"
+            filter="url(#glow)"
+          />
         </svg>
-        <span className={`absolute text-3xl font-bold ${colorClass}`}>{score}</span>
+        <span className="absolute text-4xl font-bold" style={{ color: color, textShadow: `0 0 10px ${color}` }}>{score}</span>
       </div>
     );
 };
 
+const NutrientCard = ({ label, value, unit, icon: Icon, color }: { label: string, value: number | null | undefined, unit: string, icon: React.ElementType, color: string }) => (
+    <div className="bg-muted/50 p-4 rounded-xl text-center border border-white/10">
+        <Icon className={`w-7 h-7 mx-auto mb-2 ${color}`} />
+        <span className="text-2xl font-bold text-foreground">{value?.toFixed(0) ?? '-'}</span>
+        <span className="text-xs text-muted-foreground ml-1">{unit}</span>
+        <p className="text-sm font-medium text-muted-foreground mt-1">{label}</p>
+    </div>
+);
 
-export default function NutritionResults({ results, onClear }: { results: any, onClear: () => void }) {
+const MicroNutrientRow = ({ label, value, unit }: { label: string, value: number | null | undefined, unit: string }) => (
+    <li className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-semibold text-foreground">{value?.toFixed(1) ?? 'N/A'} {unit}</span>
+    </li>
+);
+
+const NutritionTable = ({ data }: { data: NutritionInfo }) => (
+    <div className="space-y-6">
+        <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center"><Star className="w-5 h-5 mr-2 text-yellow-400"/>Macronutrients</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                <NutrientCard label="Calories" value={data.nf_calories} unit="kcal" icon={Flame} color="text-red-400" />
+                <NutrientCard label="Protein" value={data.nf_protein} unit="g" icon={Utensils} color="text-orange-400" />
+                <NutrientCard label="Carbs" value={data.nf_total_carbohydrate} unit="g" icon={BrainCircuit} color="text-blue-400" />
+                <NutrientCard label="Fat" value={data.nf_total_fat} unit="g" icon={HeartPulse} color="text-purple-400" />
+            </div>
+        </div>
+        <div>
+            <h3 className="text-lg font-semibold mb-4 flex items-center"><Activity className="w-5 h-5 mr-2 text-accent"/>Micronutrients & More</h3>
+            <ul className="space-y-2 text-sm">
+                <MicroNutrientRow label="Saturated Fat" value={data.nf_saturated_fat} unit="g" />
+                <MicroNutrientRow label="Sugars" value={data.nf_sugars} unit="g" />
+                <MicroNutrientRow label="Dietary Fiber" value={data.nf_dietary_fiber} unit="g" />
+                <MicroNutrientRow label="Sodium" value={data.nf_sodium} unit="mg" />
+                <MicroNutrientRow label="Potassium" value={data.nf_potassium} unit="mg" />
+                <MicroNutrientRow label="Cholesterol" value={data.nf_cholesterol} unit="mg" />
+            </ul>
+        </div>
+    </div>
+);
+
+const HealthImpactSection = ({ healthData }: { healthData: NutritionInfo['healthData'] }) => {
+  const getScoreStyling = (score: number, type: 'gi' | 'inflammatory') => {
+    if (type === 'gi') {
+        if (score <= 55) return { text: 'text-green-400', bg: 'bg-green-500', label: 'Low' };
+        if (score <= 69) return { text: 'text-yellow-400', bg: 'bg-yellow-500', label: 'Medium' };
+        return { text: 'text-red-400', bg: 'bg-red-500', label: 'High' };
+    }
+    if (score < 0) return { text: 'text-green-400', bg: 'bg-green-500/20', label: 'Anti-inflammatory' };
+    if (score > 0) return { text: 'text-red-400', bg: 'bg-red-500/20', label: 'Pro-inflammatory' };
+    return { text: 'text-yellow-400', bg: 'bg-yellow-500/20', label: 'Neutral' };
+  };
+
+  const giStyling = healthData?.glycemicIndex !== undefined ? getScoreStyling(healthData.glycemicIndex, 'gi') : null;
+  const inflammatoryStyling = healthData?.inflammatoryScore !== undefined ? getScoreStyling(healthData.inflammatoryScore, 'inflammatory') : null;
+
+  return (
+    <div className="space-y-6">
+      {giStyling && healthData?.glycemicIndex !== undefined && (
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <h4 className="font-semibold text-muted-foreground">Glycemic Index</h4>
+            <span className={`font-bold text-lg ${giStyling.text}`}>{healthData.glycemicIndex} <Badge variant="outline" className={`${giStyling.text} border-current`}>{giStyling.label}</Badge></span>
+          </div>
+          <div className="w-full bg-muted rounded-full h-2.5">
+            <div className={`${giStyling.bg} h-2.5 rounded-full`} style={{ width: `${Math.min(healthData.glycemicIndex, 100)}%` }} />
+          </div>
+        </div>
+      )}
+       {healthData?.glycemicLoad !== undefined && (
+          <div>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-semibold text-muted-foreground">Glycemic Load</h4>
+              <span className="font-bold text-lg text-foreground">{healthData.glycemicLoad}</span>
+            </div>
+             <div className="w-full bg-muted rounded-full h-2.5">
+              <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${Math.min((healthData.glycemicLoad / 40) * 100, 100)}%` }}/>
+            </div>
+          </div>
+        )}
+      {inflammatoryStyling && (
+        <div className="flex justify-between items-center p-4 bg-muted/50 rounded-xl">
+          <h4 className="font-semibold text-muted-foreground">Inflammatory Profile</h4>
+          <Badge className={`${inflammatoryStyling.bg} ${inflammatoryStyling.text} text-sm`}>
+            {inflammatoryStyling.label}
+          </Badge>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// --- MAIN COMPONENT ---
+
+export default function NutritionResults({ results, onClear }: NutritionResultsProps) {
   const { foodItems, aiAnalysis, nutritionData } = results;
   const [activeTab, setActiveTab] = useState<'nutrition' | 'health'>('nutrition');
   const [isLogging, setIsLogging] = useState(false);
@@ -46,7 +188,7 @@ export default function NutritionResults({ results, onClear }: { results: any, o
     }
     setIsLogging(true);
     try {
-      const mealName = foodItems.map((item: { name: string }) => item.name).join(', ');
+      const mealName = foodItems.map((item) => item.name).join(', ');
       const response = await fetch('/api/log-meal', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -83,7 +225,7 @@ export default function NutritionResults({ results, onClear }: { results: any, o
             <div className="flex-1 text-center sm:text-left">
               <Badge variant="secondary" className="mb-2 border-accent/20 bg-accent/10 text-accent-foreground">AI Health Score</Badge>
               <CardTitle className="text-3xl font-extrabold text-gradient-primary">
-                {foodItems.map((item: any) => item.name).join(', ')}
+                {foodItems.map((item) => item.name).join(', ')}
               </CardTitle>
               <CardDescription className="mt-2 text-base text-muted-foreground">
                 {aiAnalysis.description}
@@ -139,95 +281,3 @@ export default function NutritionResults({ results, onClear }: { results: any, o
     </div>
   );
 }
-
-const NutritionTable = ({ data }: { data: NutritionInfo }) => (
-    <div className="space-y-6">
-        <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center"><Star className="w-5 h-5 mr-2 text-yellow-400"/>Macronutrients</h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                <NutrientCard label="Calories" value={data.nf_calories} unit="kcal" icon={Flame} color="text-red-400" />
-                <NutrientCard label="Protein" value={data.nf_protein} unit="g" icon={Utensils} color="text-orange-400" />
-                <NutrientCard label="Carbs" value={data.nf_total_carbohydrate} unit="g" icon={BrainCircuit} color="text-blue-400" />
-                <NutrientCard label="Fat" value={data.nf_total_fat} unit="g" icon={HeartPulse} color="text-purple-400" />
-            </div>
-        </div>
-        <div>
-            <h3 className="text-lg font-semibold mb-4 flex items-center"><Activity className="w-5 h-5 mr-2 text-accent"/>Micronutrients & More</h3>
-            <ul className="space-y-2 text-sm">
-                <MicroNutrientRow label="Saturated Fat" value={data.nf_saturated_fat} unit="g" />
-                <MicroNutrientRow label="Sugars" value={data.nf_sugars} unit="g" />
-                <MicroNutrientRow label="Dietary Fiber" value={data.nf_dietary_fiber} unit="g" />
-                <MicroNutrientRow label="Sodium" value={data.nf_sodium} unit="mg" />
-                <MicroNutrientRow label="Potassium" value={data.nf_potassium} unit="mg" />
-                <MicroNutrientRow label="Cholesterol" value={data.nf_cholesterol} unit="mg" />
-            </ul>
-        </div>
-    </div>
-);
-
-const NutrientCard = ({ label, value, unit, icon: Icon, color }: { label: string, value: number | null | undefined, unit: string, icon: React.ElementType, color: string }) => (
-    <div className="bg-muted/50 p-4 rounded-xl text-center border border-white/10">
-        <Icon className={`w-7 h-7 mx-auto mb-2 ${color}`} />
-        <span className="text-2xl font-bold text-foreground">{value?.toFixed(0) ?? '-'}</span>
-        <span className="text-xs text-muted-foreground ml-1">{unit}</span>
-        <p className="text-sm font-medium text-muted-foreground mt-1">{label}</p>
-    </div>
-)
-
-const MicroNutrientRow = ({ label, value, unit }: { label: string, value: number | null | undefined, unit: string }) => (
-    <li className="flex justify-between items-center p-3 bg-muted/50 rounded-lg">
-        <span className="text-muted-foreground">{label}</span>
-        <span className="font-semibold text-foreground">{value?.toFixed(1) ?? 'N/A'} {unit}</span>
-    </li>
-)
-
-const HealthImpactSection = ({ healthData }: { healthData: NutritionInfo['healthData'] }) => {
-  const getScoreStyling = (score: number, type: 'gi' | 'inflammatory') => {
-    if (type === 'gi') {
-        if (score <= 55) return { text: 'text-green-400', bg: 'bg-green-500', label: 'Low' };
-        if (score <= 69) return { text: 'text-yellow-400', bg: 'bg-yellow-500', label: 'Medium' };
-        return { text: 'text-red-400', bg: 'bg-red-500', label: 'High' };
-    }
-    if (score < 0) return { text: 'text-green-400', bg: 'bg-green-500/20', label: 'Anti-inflammatory' };
-    if (score > 0) return { text: 'text-red-400', bg: 'bg-red-500/20', label: 'Pro-inflammatory' };
-    return { text: 'text-yellow-400', bg: 'bg-yellow-500/20', label: 'Neutral' };
-  };
-
-  const giStyling = healthData?.glycemicIndex !== undefined ? getScoreStyling(healthData.glycemicIndex, 'gi') : null;
-  const inflammatoryStyling = healthData?.inflammatoryScore !== undefined ? getScoreStyling(healthData.inflammatoryScore, 'inflammatory') : null;
-
-  return (
-    <div className="space-y-6">
-      {giStyling && healthData?.glycemicIndex !== undefined && (
-        <div>
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-semibold text-muted-foreground">Glycemic Index</h4>
-            <span className={`font-bold text-lg ${giStyling.text}`}>{healthData.glycemicIndex} <Badge variant="outline" className={`${giStyling.text} border-current`}>{giStyling.label}</Badge></span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2.5">
-            <div className={`${giStyling.bg} h-2.5 rounded-full`} style={{ width: `${Math.min(healthData.glycemicIndex, 100)}%` }} />
-          </div>
-        </div>
-      )}
-       {healthData?.glycemicLoad !== undefined && (
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <h4 className="font-semibold text-muted-foreground">Glycemic Load</h4>
-              <span className="font-bold text-lg text-foreground">{healthData.glycemicLoad}</span>
-            </div>
-             <div className="w-full bg-muted rounded-full h-2.5">
-              <div className="bg-blue-500 h-2.5 rounded-full" style={{ width: `${Math.min((healthData.glycemicLoad / 40) * 100, 100)}%` }}/>
-            </div>
-          </div>
-        )}
-      {inflammatoryStyling && (
-        <div className="flex justify-between items-center p-4 bg-muted/50 rounded-xl">
-          <h4 className="font-semibold text-muted-foreground">Inflammatory Profile</h4>
-          <Badge className={`${inflammatoryStyling.bg} ${inflammatoryStyling.text} text-sm`}>
-            {inflammatoryStyling.label}
-          </Badge>
-        </div>
-      )}
-    </div>
-  );
-};
