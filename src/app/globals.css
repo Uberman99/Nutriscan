@@ -2,138 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: linear-gradient(135deg, #f0f4f8, #d9e2ec); /* Soft blue-gray gradient */
-  --foreground: #1a202c; /* Dark slate text */
-  --card: linear-gradient(135deg, #ffffff, #f7fafc); /* Subtle white gradient */
-  --card-foreground: #1a202c; /* Dark slate text */
-  --popover: linear-gradient(135deg, #ffffff, #f7fafc); /* Subtle white gradient */
-  --popover-foreground: #1a202c; /* Dark slate text */
-  --primary: linear-gradient(135deg, #4c51bf, #6b46c1); /* Indigo gradient */
-  --primary-foreground: #ffffff; /* White text */
-  --secondary: linear-gradient(135deg, #2d3748, #4a5568); /* Dark gray gradient */
-  --secondary-foreground: #ffffff; /* White text */
-  --muted: linear-gradient(135deg, #e2e8f0, #cbd5e0); /* Muted light gray gradient */
-  --muted-foreground: #718096; /* Gray text */
-  --accent: linear-gradient(135deg, #38b2ac, #319795); /* Teal gradient */
-  --accent-foreground: #ffffff; /* White text */
-  --destructive: linear-gradient(135deg, #e53e3e, #c53030); /* Red gradient */
-  --destructive-foreground: #ffffff; /* White text */
-  --border: #cbd5e0; /* Light gray border */
-  --input: #ffffff; /* White input background */
-  --ring: linear-gradient(135deg, #4c51bf, #6b46c1); /* Indigo gradient */
-  --radius: 0.75rem; /* Rounded corners */
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+@layer base {
+  :root {
+    --background: 210 40% 98%; /* Light Cool Gray */
+    --foreground: 224 71.4% 4.1%;
+    --card: 0 0% 100%;
+    --card-foreground: 224 71.4% 4.1%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 224 71.4% 4.1%;
+    --primary: 142.1 76.2% 36.3%; /* Vibrant Green */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 142.1 76.2% 36.3%;
+    --radius: 0.75rem;
+  }
+
+  .dark {
+    /* Dark mode can be configured here later if needed */
+  }
 }
 
-.dark {
-  --background: linear-gradient(135deg, #1a202c, #2d3748); /* Dark slate gradient */
-  --foreground: #f7fafc; /* Light gray text */
-  --card: linear-gradient(135deg, #2d3748, #4a5568); /* Dark gray gradient */
-  --card-foreground: #f7fafc; /* Light gray text */
-  --popover: linear-gradient(135deg, #2d3748, #4a5568); /* Dark gray gradient */
-  --popover-foreground: #f7fafc; /* Light gray text */
-  --primary: linear-gradient(135deg, #5a67d8, #4c51bf); /* Lighter indigo gradient */
-  --primary-foreground: #ffffff; /* White text */
-  --secondary: linear-gradient(135deg, #4a5568, #2d3748); /* Medium gray gradient */
-  --secondary-foreground: #f7fafc; /* Light gray text */
-  --muted: linear-gradient(135deg, #2d3748, #4a5568); /* Muted dark gray gradient */
-  --muted-foreground: #a0aec0; /* Light gray text */
-  --accent: linear-gradient(135deg, #319795, #38b2ac); /* Dark teal gradient */
-  --accent-foreground: #f7fafc; /* Light gray text */
-  --destructive: linear-gradient(135deg, #c53030, #e53e3e); /* Dark red gradient */
-  --destructive-foreground: #f7fafc; /* Light gray text */
-  --border: #4a5568; /* Medium gray border */
-  --input: #2d3748; /* Dark gray input background */
-  --ring: linear-gradient(135deg, #5a67d8, #4c51bf); /* Lighter indigo gradient */
-  --shadow: 0 4px 6px rgba(0, 0, 0, 0.2); /* Subtle shadow */
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
 }
 
-* {
-  border-color: hsl(var(--border));
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: "Inter", sans-serif;
-  font-feature-settings: "rlig" 1, "calt" 1;
-  box-shadow: var(--shadow);
-}
-
-/* Custom styles for the NutriScan app */
-.line-clamp-3 {
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-body {
-  background: hsl(var(--background));
-  color: hsl(var(--foreground));
-  font-feature-settings: "rlig" 1, "calt" 1;
-}
-
-.prose {
-  color: var(--foreground);
-}
-
-.prose h1,
-.prose h2,
-.prose h3,
-.prose h4,
-.prose h5,
-.prose h6 {
-  color: var(--foreground);
-  font-weight: 700;
-}
-
-.prose h2 {
-  margin-top: 2em;
-  margin-bottom: 1em;
-  font-size: 1.75em;
-}
-
-.prose h3 {
-  margin-top: 1.6em;
-  margin-bottom: 0.6em;
-  font-size: 1.5em;
-}
-
-.prose p {
-  margin-top: 1.25em;
-  margin-bottom: 1.25em;
-  line-height: 1.8;
-}
-
-.prose ul {
-  margin-top: 1.25em;
-  margin-bottom: 1.25em;
-  padding-left: 1.625em;
-}
-
-.prose li {
-  margin-top: 0.5em;
-  margin-bottom: 0.5em;
-}
-
-.prose strong {
-  font-weight: 700;
-  color: var(--foreground);
-}
-
-button {
-  background: var(--primary);
-  color: var(--primary-foreground);
-  border-radius: var(--radius);
-  padding: 0.5em 1em;
-  box-shadow: var(--shadow);
-  transition: background 0.3s ease, box-shadow 0.3s ease;
-}
-
-button:hover {
-  background: linear-gradient(135deg, #6b46c1, #4c51bf); /* Hover indigo gradient */
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+/* New Gradient Text for the Light Theme */
+.text-gradient {
+  @apply bg-gradient-to-r from-emerald-500 to-green-600 bg-clip-text text-transparent;
 }

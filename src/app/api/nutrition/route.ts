@@ -1,9 +1,9 @@
-// src/app/api/nutrition/route.ts
 import { NextRequest, NextResponse } from 'next/server';
+import { mockNutritionData } from '@/lib/demo-data';
 import { NON_FOOD_ITEMS } from '@/lib/non-food-items';
-import stringSimilarity from 'string-similarity';
 import { getHealthData, calculateGlycemicLoad } from '@/lib/health-data';
 import { NutritionInfo, HealthImpactData } from '@/lib/types';
+import stringSimilarity from 'string-similarity';
 
 const USDA_API_KEY = process.env.USDA_API_KEY;
 const USDA_BASE_URL = 'https://api.nal.usda.gov/fdc/v1';
@@ -19,39 +19,47 @@ export async function POST(request: NextRequest) {
   try {
     const { foodName } = await request.json();
     
-    if (!foodName || typeof foodName !== 'string' || foodName.trim() === '') {
+    if (!foodName) {
       return NextResponse.json({ error: 'No food name provided' }, { status: 400 });
     }
 
-    const cleanedFoodName = foodName.trim().toLowerCase();
-
-    // Robust non-food item check using string-similarity to catch close matches
+    // Robust non-food item check using string similarity
     const nonFoodList = Array.from(NON_FOOD_ITEMS);
-    const { bestMatch } = stringSimilarity.findBestMatch(cleanedFoodName, nonFoodList);
-    
-    if (bestMatch.rating > 0.85) {
-        console.log(`Rejecting non-food item (fuzzy match): "${foodName}" ~ "${bestMatch.target}"`);
+    const { bestMatch } = stringSimilarity.findBestMatch(foodName.toLowerCase(), nonFoodList);
+
+    if (bestMatch.rating > 0.85) { // High confidence non-food match
+        console.log(`Rejecting non-food item from nutrition search (fuzzy match): "${foodName}" ~ "${bestMatch.target}"`);
         return NextResponse.json({
-            error: `'${foodName}' is recognized as a non-food item.`,
-        }, { status: 400 });
+            food_name: foodName,
+            nutrients: [],
+            nf_calories: 0,
+            message: 'This is not a food item.'
+        }, { status: 404 });
     }
     
-    // If no API key is available, the service is non-functional. Fail immediately.
+    // If no API key is available, use mock data. This is a fallback for local dev.
     if (!USDA_API_KEY) {
-      console.error('CRITICAL: USDA_API_KEY is not configured in environment variables.');
-      return NextResponse.json({ error: 'Nutrition service is currently unavailable.' }, { status: 503 });
+      console.warn('USDA API key is missing. Using mock data for USDA Nutrition API');
+      const lowerFoodName = foodName.toLowerCase();
+      const mockDataKey = Object.keys(mockNutritionData).find(key => key.toLowerCase() === lowerFoodName);
+      const mockData = mockDataKey ? mockNutritionData[mockDataKey as keyof typeof mockNutritionData] : undefined;
+      
+      if (mockData) {
+        // This section will now correctly process mock data when the API key is absent.
+        return NextResponse.json(mockData);
+      }
+      return NextResponse.json({ error: `No mock data found for "${foodName}" and API key is missing.` }, { status: 404 });
     }
 
-    // --- Proceed with USDA API call ---
-    const searchResponse = await fetch(`${USDA_BASE_URL}/foods/search?query=${encodeURIComponent(cleanedFoodName)}&api_key=${USDA_API_KEY}`);
+    // --- Live USDA API Call Logic ---
+    const searchResponse = await fetch(`${USDA_BASE_URL}/foods/search?query=${encodeURIComponent(foodName)}&api_key=${USDA_API_KEY}`);
     if (!searchResponse.ok) {
-      console.error(`USDA search API error: ${searchResponse.status} ${searchResponse.statusText}`);
-      throw new Error(`USDA API is unavailable.`);
+      throw new Error(`USDA API error for food search: ${searchResponse.statusText}`);
     }
     const searchData = await searchResponse.json();
 
     if (!searchData.foods || searchData.foods.length === 0) {
-      return NextResponse.json({ error: `Food '${foodName}' not found in USDA database.` }, { status: 404 });
+      return NextResponse.json({ error: 'Food not found in USDA database' }, { status: 404 });
     }
 
     const food = searchData.foods[0];
@@ -59,19 +67,13 @@ export async function POST(request: NextRequest) {
 
     const detailsResponse = await fetch(`${USDA_BASE_URL}/food/${fdcId}?api_key=${USDA_API_KEY}`);
     if (!detailsResponse.ok) {
-        console.error(`USDA details API error: ${detailsResponse.status} ${detailsResponse.statusText}`);
-        throw new Error(`Could not retrieve details for FDC ID ${fdcId}.`);
+      throw new Error(`USDA API error for food details: ${detailsResponse.statusText}`);
     }
     const detailsData = await detailsResponse.json();
 
-    interface FoodNutrient {
-      nutrient: { id: number };
-      amount?: number;
-    }
-
-    const getNutrientValue = (id: number): number | null => {
-      const nutrient = detailsData.foodNutrients?.find((n: FoodNutrient) => n.nutrient.id === id);
-      return nutrient?.amount ?? null;
+    const getNutrientValue = (id: number) => {
+      const nutrient = detailsData.foodNutrients.find((n: { nutrient: { id: number } }) => n.nutrient.id === id);
+      return nutrient ? nutrient.amount : null;
     };
 
     const carbs = getNutrientValue(1005) || 0;
@@ -98,11 +100,10 @@ export async function POST(request: NextRequest) {
       nf_sodium: getNutrientValue(1093),
       nf_total_carbohydrate: carbs,
       nf_dietary_fiber: getNutrientValue(1079),
-      nf_sugars: getNutrientValue(2000),
+      nf_sugars: getNutrientValue(2000), // Note: This ID represents total sugars.
       nf_protein: getNutrientValue(1003),
       nf_potassium: getNutrientValue(1092),
       nf_p: getNutrientValue(1091),
-      photo: { thumb: food.foodNutrients?.[0]?.photo?.thumb || null },
       healthData: healthImpact,
     };
 

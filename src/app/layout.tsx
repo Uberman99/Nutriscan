@@ -1,14 +1,19 @@
 // src/app/layout.tsx
 import type { Metadata } from "next";
-import { ClerkProvider } from '@clerk/nextjs';
+import { Inter } from "next/font/google";
 import "./globals.css";
 import Navigation from "@/components/Navigation";
 import Footer from "@/components/Footer";
+import { ClerkProvider } from '@clerk/nextjs';
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
-  title: "NutriScan - Smart Food Analysis & Nutrition Tracker",
-  description: "Scan food, analyze nutrition, and find the best prices instantly with AI-powered insights.",
-  keywords: ["nutrition", "food scanner", "health", "diet", "calories", "food prices"],
+  title: "NutriScan - Vibrant Food Intelligence",
+  description: "Scan food with pure accuracy. Get instant ingredient breakdowns, nutrition facts, and vibrant health insights powered by AI.",
 };
 
 export default function RootLayout({
@@ -19,19 +24,12 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en" suppressHydrationWarning>
-        <body className="font-sans antialiased" suppressHydrationWarning>
-          <Navigation />
-          <main className="min-h-screen bg-gradient-to-br from-emerald-50 via-blue-50 to-purple-50 relative">
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-              <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-emerald-200 to-blue-200 rounded-full opacity-20 animate-pulse"></div>
-              <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-purple-200 to-pink-200 rounded-full opacity-20 animate-pulse"></div>
-              <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-gradient-to-r from-blue-100 to-emerald-100 rounded-full opacity-10 animate-pulse"></div>
-            </div>
-            <div className="relative z-10">
+        <body className={`font-sans ${inter.variable} antialiased`}>
+            <Navigation />
+            <main className="min-h-screen">
               {children}
-            </div>
-          </main>
-          <Footer />
+            </main>
+            <Footer />
         </body>
       </html>
     </ClerkProvider>

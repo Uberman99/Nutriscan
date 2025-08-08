@@ -1,5 +1,4 @@
 // src/lib/types.ts
-
 export interface NutritionInfo {
   food_name: string;
   brand_name: string | null;
@@ -17,24 +16,22 @@ export interface NutritionInfo {
   nf_protein: number | null;
   nf_potassium: number | null;
   nf_p: number | null;
-  photo?: {
-    thumb: string;
-  };
+  photo?: { thumb: string; };
   healthData?: HealthImpactData;
 }
-
 export interface HealthImpactData {
   glycemicIndex?: number;
   glycemicLoad?: number;
   inflammatoryScore?: number;
   inflammatoryText?: string;
 }
-
 export interface MealLog {
-  id: number; // Corrected from string to number to match SERIAL type
+  id: string;
   userId: string;
-  date: string; // YYYY-MM-DD
+  date: string;
   mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
+  // --- ADDED mealName TO MATCH DATABASE SCHEMA ---
+  mealName: string;
   foods: NutritionInfo[];
   createdAt: Date;
 }
