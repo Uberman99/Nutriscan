@@ -141,8 +141,14 @@ export async function POST(request: NextRequest) {
     const formData = await request.formData();
     const imageFile = formData.get('image') as File | null;
     if (!imageFile) {
+      console.error('No image file provided in the request.');
       return NextResponse.json({ error: 'No image file provided' }, { status: 400 });
     }
+    console.log('Image file received:', {
+      name: imageFile.name,
+      size: imageFile.size,
+      type: imageFile.type,
+    });
     const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
 
     let identifiedDishName = '';
@@ -210,37 +216,44 @@ export async function POST(request: NextRequest) {
         }
     }
 
+    console.log('Final food items identified:', finalFoodItems);
+
     // --- NUTRITION & ANALYSIS ---
     const nutritionPromises = finalFoodItems.slice(0, 5).map(async (name) => {
-        const [usdaData, nutritionixData] = await Promise.all([
-            getNutritionData(name),
-            getNutritionixData(name),
-        ]);
+        try {
+            const [usdaData, nutritionixData] = await Promise.all([
+                getNutritionData(name),
+                getNutritionixData(name),
+            ]);
 
-        if (usdaData && nutritionixData) {
-            console.log(`Merging USDA and Nutritionix data for: ${name}`);
-            return {
-                ...nutritionixData,
-                ...usdaData,
-                healthData: {
-                    ...nutritionixData.healthData,
-                    ...usdaData.healthData,
-                },
-            };
+            if (usdaData && nutritionixData) {
+                console.log(`Merging USDA and Nutritionix data for: ${name}`);
+                return {
+                    ...nutritionixData,
+                    ...usdaData,
+                    healthData: {
+                        ...nutritionixData.healthData,
+                        ...usdaData.healthData,
+                    },
+                };
+            }
+
+            if (usdaData) {
+                console.log(`Using USDA data for: ${name}`);
+                return usdaData;
+            }
+
+            if (nutritionixData) {
+                console.log(`Using Nutritionix data for: ${name}`);
+                return nutritionixData;
+            }
+
+            console.warn(`Both USDA and Nutritionix APIs failed for: ${name}. Falling back to null.`);
+            return null; // Fallback to null if both APIs fail
+        } catch (error) {
+            console.error(`Error processing nutrition data for: ${name}`, error);
+            return null;
         }
-
-        if (usdaData) {
-            console.log(`Using USDA data for: ${name}`);
-            return usdaData;
-        }
-
-        if (nutritionixData) {
-            console.log(`Using Nutritionix data for: ${name}`);
-            return nutritionixData;
-        }
-
-        console.warn(`Both USDA and Nutritionix APIs failed for: ${name}. Falling back to null.`);
-        return null; // Fallback to null if both APIs fail
     });
 
     const nutritionData = (await Promise.all(nutritionPromises)).filter((item): item is NutritionInfo => item !== null);
@@ -271,6 +284,8 @@ export async function POST(request: NextRequest) {
             },
         });
     }
+
+    console.log('Final nutrition data:', nutritionData);
 
     // Use mock analysis if it wasn't generated in Tier 1
     if (!aiAnalysis) {
