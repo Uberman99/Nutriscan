@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NutritionInfo } from '@/lib/types';
-import { mockAIAnalysis } from '@/lib/demo-data';
+import { mockAIAnalysis, mockNutritionData } from '@/lib/demo-data';
 import stringSimilarity from 'string-similarity';
 import { getHealthData, calculateGlycemicLoad } from '@/lib/health-data';
 import { foodDatabase } from '@/lib/food-data';
@@ -13,7 +13,10 @@ const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
 // --- SELF-CONTAINED HELPER FUNCTIONS ---
 async function getNutritionData(foodName: string): Promise<NutritionInfo | null> {
     const USDA_API_KEY = process.env.USDA_API_KEY;
-    if (!USDA_API_KEY) { return null; }
+    if (!USDA_API_KEY) {
+        console.warn('USDA API key is missing.');
+        return null;
+    }
     try {
         const searchResponse = await fetch(`https://api.nal.usda.gov/fdc/v1/foods/search?query=${encodeURIComponent(foodName)}&api_key=${USDA_API_KEY}`);
         if (!searchResponse.ok) return null;
@@ -25,16 +28,16 @@ async function getNutritionData(foodName: string): Promise<NutritionInfo | null>
         if (!detailsResponse.ok) return null;
         const detailsData = await detailsResponse.json();
         
+        // Corrected: Defined a type for the nutrient object
         const getNutrient = (id: number) => detailsData.foodNutrients.find((n: { nutrient: { id: number; }; }) => n.nutrient.id === id)?.amount || null;
 
         const carbs = getNutrient(1005) || 0;
         const localHealthData = getHealthData(detailsData.description);
         const glycemicLoad = localHealthData.glycemicIndex ? calculateGlycemicLoad(localHealthData.glycemicIndex, carbs) : undefined;
-        const healthImpact: any = {
+        const healthImpact: HealthImpactData = {
             glycemicIndex: localHealthData.glycemicIndex,
             glycemicLoad: glycemicLoad,
             inflammatoryScore: localHealthData.inflammatoryScore,
-            inflammatoryText: 'N/A',
         };
 
         return {
@@ -55,6 +58,24 @@ async function getNutritionData(foodName: string): Promise<NutritionInfo | null>
     }
 }
 
+async function getAIConcepts(imageBuffer: Buffer): Promise<{name: string, confidence: number}[]> {
+    const CLARIFAI_API_KEY = process.env.CLARIFAI_API_KEY;
+    if (!CLARIFAI_API_KEY) { return []; }
+    try {
+        const response = await fetch('https://api.clarifai.com/v2/models/food-item-recognition/versions/1d5fd481e0cf4826aa72ec3ff049e044/outputs', {
+            method: 'POST',
+            headers: { 'Authorization': `Key ${CLARIFAI_API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ inputs: [{ data: { image: { base64: imageBuffer.toString('base64') } } }] })
+        });
+        if (!response.ok) return [];
+        const data = await response.json();
+        return data.outputs?.[0]?.data?.concepts?.map((c: { name: string, value: number }) => ({ name: c.name, confidence: c.value })) || [];
+    } catch (error) {
+        console.error('Error in getAIConcepts:', error);
+        return [];
+    }
+}
+
 // --- MAIN API ENDPOINT ---
 export async function POST(request: NextRequest) {
   try {
@@ -65,62 +86,67 @@ export async function POST(request: NextRequest) {
     }
     const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
 
-    let aiSuggestedNames: string[] = [];
+    let finalFoodItems: string[] = [];
+    let identifiedDishName: string = '';
+    let source: string = '';
 
-    // Step 1: AI as a Recognition Tool
-    try {
-      console.log('Ground Truth Protocol: AI Recognition Step...');
-      const visionModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest" });
-      const visionPrompt = `Analyze the image and identify the food. Provide a list of possible, common names, from most to least likely. Your response MUST be a valid JSON object with a single key "suggestions", an array of strings. Example: {"suggestions": ["Tuna Sandwich", "Sandwich", "Tuna Salad"]}. Return ONLY the JSON object.`;
-      const imagePart = { inlineData: { data: imageBuffer.toString("base64"), mimeType: imageFile.type } };
-      const result = await visionModel.generateContent([visionPrompt, imagePart]);
-      aiSuggestedNames = JSON.parse(result.response.text().replace(/```json/g, '').replace(/```/g, '').trim()).suggestions || [];
-    } catch (e) {
-      throw new Error('AI Vision model failed to provide suggestions.');
-    }
-    
-    if (aiSuggestedNames.length === 0) {
-        throw new Error('AI Vision model returned no suggestions.');
-    }
+    // --- Deterministic Fusion Engine ---
+    console.log('Fusion Engine: Step 1 - High-Confidence Concept Generation...');
+    const aiConcepts = await getAIConcepts(imageBuffer);
+    const highConfidenceConcepts = aiConcepts
+        .filter(c => c.confidence > 0.95)
+        .map(c => c.name.toLowerCase());
 
-    // Step 2: Server-Side Deterministic Matching
-    const allFoodNamesAndKeywords = foodDatabase.flatMap(food => [food.name, ...food.keywords]);
-    const bestMatch = stringSimilarity.findBestMatch(aiSuggestedNames[0], allFoodNamesAndKeywords);
-    
-    if (bestMatch.bestMatch.rating < 0.4) {
-        throw new Error(`Could not find a confident match in the Sovereign Database for suggestion: "${aiSuggestedNames[0]}"`);
+    if (highConfidenceConcepts.length === 0) {
+        throw new Error('Vision model could not identify any high-confidence concepts in the image.');
     }
     
-    const matchedItem = foodDatabase.find(food => food.name === bestMatch.bestMatch.target || food.keywords.includes(bestMatch.bestMatch.target));
-    
-    if (!matchedItem) {
-        throw new Error('Internal error: Matched item not found in database.');
-    }
+    let bestMatch = { score: 0, item: null as typeof foodDatabase[0] | null };
+    foodDatabase.forEach(item => {
+        let score = 0;
+        const keywords = item.keywords.map(k => k.toLowerCase());
+        highConfidenceConcepts.forEach(concept => {
+            if (keywords.includes(concept)) {
+                score++;
+            }
+        });
+        if (score > bestMatch.score) {
+            bestMatch = { score, item };
+        }
+    });
 
-    const finalFoodItems = matchedItem.ingredients;
-    const identifiedDishName = matchedItem.name;
-    console.log(`Ground Truth Protocol successful. Identified: "${identifiedDishName}". Using ingredients:`, finalFoodItems);
+    if (bestMatch.score > 0 && bestMatch.item) {
+        finalFoodItems = bestMatch.item.ingredients;
+        identifiedDishName = bestMatch.item.name;
+        source = "Sovereign Database";
+        console.log(`Tier 1 Success. Matched: "${identifiedDishName}" with score ${bestMatch.score}.`);
+    } else {
+        console.log('Tier 1 Failed. Falling back to Tier 2: Highest-Confidence AI Concept.');
+        identifiedDishName = aiConcepts[0].name;
+        finalFoodItems = [identifiedDishName];
+        source = "Filtered AI Concept";
+    }
     
-    // Step 3: Analysis using Ground Truth Data
     const nutritionPromises = finalFoodItems.map(name => getNutritionData(name));
     const nutritionData = (await Promise.all(nutritionPromises)).filter((item): item is NutritionInfo => item !== null);
     
     if (nutritionData.length === 0) {
-        throw new Error('Could not retrieve nutrition data for the verified ingredients.');
+        throw new Error('Could not retrieve nutrition data for any identified ingredients.');
     }
 
     let aiAnalysis;
     try {
       const analysisModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const analysisPrompt = `You are a nutritionist. Analyze a meal called "${identifiedDishName}" with these ingredients: ${finalFoodItems.join(', ')}. The primary item's data is: ${JSON.stringify(nutritionData[0])}. Return a valid JSON object with ONLY this structure: {"description": "...", "healthScore": <1-100>, "suggestions": ["...", "...", "..."]}`;
+      const analysisPrompt = `You are a nutritionist. Analyze a meal called "${identifiedDishName}" containing: ${finalFoodItems.join(', ')}. Base your analysis STRICTLY on these components and the provided data: ${JSON.stringify(nutritionData[0])}. Return a valid JSON object with ONLY this structure: {"description": "...", "healthScore": <1-100>, "suggestions": ["...", "...", "..."]}`;
       const result = await analysisModel.generateContent(analysisPrompt);
       aiAnalysis = JSON.parse(result.response.text().replace(/```json/g, '').replace(/```/g, '').trim());
-    } catch (analysisError) {
+    } catch {
+        // Corrected: Removed unused 'analysisError' variable
         aiAnalysis = { ...mockAIAnalysis, description: `Analysis for ${identifiedDishName} is unavailable.`};
     }
 
     const responsePayload = {
-        foodItems: [{ name: identifiedDishName, confidence: 1.0, source: 'Sovereign Database' }],
+        foodItems: [{ name: identifiedDishName, confidence: 1.0, source }],
         aiAnalysis,
         nutritionData,
         priceData: []
