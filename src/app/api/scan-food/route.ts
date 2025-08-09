@@ -28,13 +28,11 @@ async function getNutritionData(foodName: string): Promise<NutritionInfo | null>
         if (!detailsResponse.ok) return null;
         const detailsData = await detailsResponse.json();
         
-        // Corrected: Defined a type for the nutrient object
         const getNutrient = (id: number) => detailsData.foodNutrients.find((n: { nutrient: { id: number; }; }) => n.nutrient.id === id)?.amount || null;
-
         const carbs = getNutrient(1005) || 0;
         const localHealthData = getHealthData(detailsData.description);
         const glycemicLoad = localHealthData.glycemicIndex ? calculateGlycemicLoad(localHealthData.glycemicIndex, carbs) : undefined;
-        const healthImpact: HealthImpactData = {
+        const healthImpact: HealthImpact = {
             glycemicIndex: localHealthData.glycemicIndex,
             glycemicLoad: glycemicLoad,
             inflammatoryScore: localHealthData.inflammatoryScore,
@@ -141,7 +139,6 @@ export async function POST(request: NextRequest) {
       const result = await analysisModel.generateContent(analysisPrompt);
       aiAnalysis = JSON.parse(result.response.text().replace(/```json/g, '').replace(/```/g, '').trim());
     } catch {
-        // Corrected: Removed unused 'analysisError' variable
         aiAnalysis = { ...mockAIAnalysis, description: `Analysis for ${identifiedDishName} is unavailable.`};
     }
 
@@ -158,4 +155,11 @@ export async function POST(request: NextRequest) {
     console.error('CRITICAL ERROR:', errorMessage);
     return NextResponse.json({ error: 'Failed to complete food analysis', details: errorMessage }, { status: 500 });
   }
+}
+
+// Define a specific type for healthImpact
+interface HealthImpact {
+  glycemicIndex?: number;
+  glycemicLoad?: number;
+  inflammatoryScore?: number;
 }
