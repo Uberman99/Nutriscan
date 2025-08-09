@@ -30,8 +30,13 @@ export interface MealLog {
   userId: string;
   date: string;
   mealType: 'Breakfast' | 'Lunch' | 'Dinner' | 'Snack';
-  // --- ADDED mealName TO MATCH DATABASE SCHEMA ---
   mealName: string;
   foods: NutritionInfo[];
   createdAt: Date;
+}
+
+export interface FoodItem {
+  name: string;
+  ingredients: string[];
+  keywords: string[];
 }

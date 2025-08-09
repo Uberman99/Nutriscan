@@ -29,7 +29,7 @@ interface NutritionResultsProps {
   onClear: () => void;
 }
 
-// --- SUB-COMPONENTS (DEFINED BEFORE USE) ---
+// --- SUB-COMPONENTS (DEFINED ONCE, BEFORE USE) ---
 
 const HealthScoreRing = ({ score }: { score: number }) => {
     const radius = 60;
@@ -238,9 +238,9 @@ export default function NutritionResults({ results, onClear }: NutritionResultsP
               <h3 className="text-lg font-semibold mb-3 flex items-center"><Lightbulb className="w-5 h-5 mr-2 text-accent"/>AI Suggestions</h3>
               <div className="space-y-2">
                   {aiAnalysis.suggestions.map((suggestion: string, i: number) => (
-                      <div key={i} className="flex items-start p-3 bg-accent/10 rounded-lg border border-accent/20">
-                          <span className="text-accent font-bold mr-2">✦</span>
-                          <p className="text-sm text-accent-foreground/80">{suggestion}</p>
+                      <div key={i} className="flex items-start p-3 bg-card rounded-lg border border-border">
+                          <span className="text-accent font-bold mr-3 mt-1">✦</span>
+                          <p className="text-sm text-foreground/90">{suggestion}</p>
                       </div>
                   ))}
               </div>
