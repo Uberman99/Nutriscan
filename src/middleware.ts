@@ -1,21 +1,20 @@
-// src/middleware.ts
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-// Define the routes that should be protected (require authentication)
+// Define all routes that require a user to be logged in to access.
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
   '/scan(.*)',
   '/api/log-meal(.*)',
   '/api/get-meals(.*)',
   '/api/clear-meals(.*)',
-  // Add any other routes that require a user to be logged in
+  '/api/scan-food(.*)', // This critical API route must be protected
 ]);
 
-export default clerkMiddleware(async (auth, req) => {
+export default clerkMiddleware((auth, req) => {
   // If the requested route matches one of our protected routes,
-  // enforce authentication.
+  // enforce authentication by calling auth().protect().
   if (isProtectedRoute(req)) {
-    await auth();
+    auth().protect();
   }
 });
 

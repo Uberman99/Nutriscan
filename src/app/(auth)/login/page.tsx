@@ -1,19 +1,26 @@
 'use client';
 
+import { useSignIn } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Chrome, ScanLine } from 'lucide-react';
 
-export const dynamic = 'force-dynamic';
-
 export default function LoginPage() {
-  // Clerk's OAuth flow with redirect is handled by middleware and simple navigation.
-  // The useSignIn() hook is not required for this specific implementation.
-  const handleGoogleSignIn = () => {
-    // In a full Clerk setup with redirects, this would ideally use signIn.authenticateWithRedirect.
-    // However, for a simple flow managed by middleware, a direct navigation can work.
-    // For robustness, linking to Clerk's sign-in page is the most stable approach.
-    window.location.href = '/sign-in'; 
+  const { signIn } = useSignIn();
+
+  // This function correctly uses the Clerk hook to initiate the OAuth flow.
+  const handleGoogleSignIn = async () => {
+    if (!signIn) return;
+    
+    try {
+      await signIn.authenticateWithRedirect({
+        strategy: 'oauth_google',
+        redirectUrl: '/scan', // Redirect to the scan page after successful sign-in
+        redirectUrlComplete: '/dashboard', // The final destination after the OAuth flow
+      });
+    } catch (error) {
+      console.error('Error during Google Sign-In:', error);
+    }
   };
 
   return (
@@ -25,8 +32,8 @@ export default function LoginPage() {
           <div className="p-3 bg-primary/10 rounded-lg border border-primary/20 mb-4">
             <ScanLine className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-3xl font-bold text-gradient">Welcome Back</CardTitle>
-          <CardDescription>Sign in to access your Sovereign Dashboard</CardDescription>
+          <CardTitle className="text-3xl font-bold text-gradient">Welcome</CardTitle>
+          <CardDescription>Sign in to access the Sovereign Analysis Engine</CardDescription>
         </CardHeader>
         <CardContent>
           <Button 

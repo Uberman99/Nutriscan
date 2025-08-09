@@ -35,6 +35,7 @@ export interface MealLog {
   createdAt: Date;
 }
 
+// New type for the Sovereign Database
 export interface FoodItem {
   name: string;
   ingredients: string[];
