@@ -7,14 +7,15 @@ const isProtectedRoute = createRouteMatcher([
   '/api/log-meal(.*)',
   '/api/get-meals(.*)',
   '/api/clear-meals(.*)',
-  '/api/scan-food(.*)', // This critical API route must be protected
+  '/api/scan-food(.*)', 
 ]);
 
 // This is the standard Clerk middleware implementation.
 // It will automatically protect the routes defined above.
 export default clerkMiddleware((auth, req) => {
   if (isProtectedRoute(req)) {
-    auth(); // Invoking auth() on a protected route handles the protection logic.
+    // Invoking auth() on a protected route correctly handles the protection logic.
+    auth(); 
   }
 });
 
