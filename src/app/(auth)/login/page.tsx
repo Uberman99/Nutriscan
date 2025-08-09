@@ -10,13 +10,16 @@ export default function LoginPage() {
 
   // This function correctly uses the Clerk hook to initiate the OAuth flow.
   const handleGoogleSignIn = async () => {
-    if (!signIn) return;
+    if (!signIn) {
+        console.error("Clerk sign-in hook not available.");
+        return;
+    };
     
     try {
       await signIn.authenticateWithRedirect({
         strategy: 'oauth_google',
-        redirectUrl: '/scan', // Redirect to the scan page after successful sign-in
-        redirectUrlComplete: '/dashboard', // The final destination after the OAuth flow
+        redirectUrl: '/scan', // Redirect to the scan page after initiating sign-in
+        redirectUrlComplete: '/dashboard', // The final destination after the OAuth flow is complete
       });
     } catch (error) {
       console.error('Error during Google Sign-In:', error);
