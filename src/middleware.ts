@@ -10,6 +10,12 @@ const isProtectedRoute = createRouteMatcher([
   '/api/scan-food(.*)', 
 ]);
 
+// Add logging to verify Clerk environment variables
+console.log('Clerk Environment Variables:', {
+  CLERK_FRONTEND_API: process.env.CLERK_FRONTEND_API,
+  CLERK_API_KEY: process.env.CLERK_API_KEY,
+});
+
 // This is the standard Clerk middleware implementation.
 // It will automatically protect the routes defined above.
 export default clerkMiddleware((auth, req) => {
