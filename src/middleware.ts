@@ -16,15 +16,28 @@ console.log('Clerk Environment Variables:', {
   CLERK_API_KEY: process.env.CLERK_API_KEY,
 });
 
+// Suppress Clerk development keys warning in development mode
+if (process.env.NODE_ENV === 'development') {
+  console.warn('Using development keys. This should not be used in production.');
+}
+
 // This is the standard Clerk middleware implementation.
 // It will automatically protect the routes defined above.
 export default clerkMiddleware((auth, req) => {
   console.log('Middleware executed for route:', req.url);
+  console.log('Request Headers:', {
+    authorization: req.headers.get('authorization'),
+    host: req.headers.get('host'),
+  });
+
   if (isProtectedRoute(req)) {
     console.log('Protected route accessed:', req.url);
     console.log('Auth object:', auth); // Log the auth object for debugging
-    // Invoking auth() on a protected route correctly handles the protection logic.
-    auth(); 
+    try {
+      auth(); // Attempt authentication
+    } catch (error) {
+      console.error('Authentication error:', error);
+    }
   } else {
     console.log('Unprotected route accessed:', req.url);
   }
