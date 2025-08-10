@@ -22,6 +22,7 @@ export default clerkMiddleware((auth, req) => {
   console.log('Middleware executed for route:', req.url);
   if (isProtectedRoute(req)) {
     console.log('Protected route accessed:', req.url);
+    console.log('Auth object:', auth); // Log the auth object for debugging
     // Invoking auth() on a protected route correctly handles the protection logic.
     auth(); 
   } else {
