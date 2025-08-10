@@ -13,9 +13,13 @@ const isProtectedRoute = createRouteMatcher([
 // This is the standard Clerk middleware implementation.
 // It will automatically protect the routes defined above.
 export default clerkMiddleware((auth, req) => {
+  console.log('Middleware executed for route:', req.url);
   if (isProtectedRoute(req)) {
+    console.log('Protected route accessed:', req.url);
     // Invoking auth() on a protected route correctly handles the protection logic.
     auth(); 
+  } else {
+    console.log('Unprotected route accessed:', req.url);
   }
 });
 
